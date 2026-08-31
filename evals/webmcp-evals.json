@@ -1,0 +1,127 @@
+[
+  {
+    "name": "Hero: group session orchestration",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play, preferably something none of us has finished."
+      }
+    ],
+    "expectedCall": [
+      {
+        "unordered": [
+          { "functionName": "get_online_friends", "arguments": {} },
+          { "functionName": "get_my_library", "arguments": {} },
+          {
+            "functionName": "search_games",
+            "arguments": { "coop": true, "maxSessionMinutes": { "$lte": 90 } }
+          },
+          {
+            "functionName": "get_friend_libraries",
+            "arguments": { "friendIds": { "$contains": "alex" } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Hero, follow-up: let's play",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play, preferably something none of us has finished."
+      },
+      { "role": "assistant", "type": "message", "content": "I'd recommend Nightfall Signal — all four of you own it, it's 4-player co-op, sessions run 45-70 minutes, and nobody has finished it. Ridge Runners is a close second, but Sam has already completed it." },
+      { "role": "user", "type": "message", "content": "Let's play Nightfall Signal." }
+    ],
+    "expectedCall": [
+      { "functionName": "create_party", "arguments": { "gameId": "nightfall-signal" } },
+      {
+        "functionName": "invite_friends",
+        "arguments": { "friendIds": { "$contains": "alex" } }
+      }
+    ]
+  },
+  {
+    "name": "Solo discovery: relaxing, under 30 minutes",
+    "messages": [
+      { "role": "user", "type": "message", "content": "I've got 20 minutes free. Find me something relaxing to play by myself." }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "search_games",
+        "arguments": { "maxSessionMinutes": { "$lte": 30 } }
+      }
+    ]
+  },
+  {
+    "name": "Backlog: what have I never started",
+    "messages": [
+      { "role": "user", "type": "message", "content": "What's in my library that I've never even started?" }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "get_my_library",
+        "arguments": { "onlyUnfinished": true }
+      }
+    ]
+  },
+  {
+    "name": "Presence-aware: what is Alex playing",
+    "messages": [
+      { "role": "user", "type": "message", "content": "Alex is online right now — what are they playing? Would it work for all four of us?" }
+    ],
+    "expectedCall": [
+      { "functionName": "get_online_friends", "arguments": {} },
+      {
+        "unordered": [
+          { "functionName": "get_game_details", "arguments": { "gameIds": { "$contains": "ridge-runners" } } },
+          { "functionName": "get_friend_libraries", "arguments": {} }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "View-aware: any of these work for tonight",
+    "messages": [
+      { "role": "user", "type": "message", "content": "Any of these work for the four of us tonight? About an hour." }
+    ],
+    "expectedCall": [
+      { "functionName": "get_current_view", "arguments": {} }
+    ]
+  },
+  {
+    "name": "Filter the screen for the player",
+    "messages": [
+      { "role": "user", "type": "message", "content": "Show me only the co-op games in the store that support 4 players." }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "apply_filters",
+        "arguments": { "coop": true, "minPlayers": 4 }
+      }
+    ]
+  },
+  {
+    "name": "No clean match: designed near-miss",
+    "messages": [
+      { "role": "user", "type": "message", "content": "Find something co-op, 4 players, under 75 minutes, that Sam hasn't already finished." }
+    ],
+    "expectedCall": [
+      {
+        "unordered": [
+          {
+            "functionName": "search_games",
+            "arguments": { "coop": true, "maxSessionMinutes": { "$lte": 90 } }
+          },
+          {
+            "functionName": "get_friend_libraries",
+            "arguments": { "friendIds": { "$contains": "sam" } }
+          }
+        ]
+      }
+    ]
+  }
+]

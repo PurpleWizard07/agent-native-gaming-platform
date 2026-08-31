@@ -1,4 +1,5 @@
 import { useTool } from "./useTool";
+import { toArray } from "./normalize";
 import { useSession } from "../state/SessionContext";
 import { useParty } from "../state/PartyContext";
 
@@ -40,7 +41,7 @@ export function PartyTools() {
       additionalProperties: false,
     },
     execute: async (input) => {
-      const updated = await inviteFriends(input.friendIds);
+      const updated = await inviteFriends(toArray(input.friendIds));
       return { members: updated.members, status: updated.status };
     },
   });

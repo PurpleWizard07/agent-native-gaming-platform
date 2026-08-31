@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useTool } from "./useTool";
+import { toArray } from "./normalize";
 import { FILTERABLE_PAGES, useView, type Filters } from "../state/ViewContext";
 import { GAME_BY_ID } from "../data/games";
 
@@ -61,7 +62,7 @@ export function ViewTools() {
           return { filters: cleared };
         }
         const next: Filters = {
-          genres: input.genres ?? [],
+          genres: toArray(input.genres),
           minPlayers: input.minPlayers,
           coop: input.coop,
           maxSessionMinutes: input.maxSessionMinutes,

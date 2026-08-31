@@ -1,4 +1,5 @@
 import { useTool } from "./useTool";
+import { toArray } from "./normalize";
 import { useSession } from "../state/SessionContext";
 import { GAMES, GAME_BY_ID } from "../data/games";
 import { libraryFor, ownsGame } from "../data/libraries";
@@ -83,7 +84,7 @@ export function ReadTools() {
     },
     execute: (input) => {
       const result: Record<string, { gameId: string; title?: string; completed: boolean }[]> = {};
-      for (const friendId of input.friendIds) {
+      for (const friendId of toArray(input.friendIds)) {
         result[friendId] = libraryFor(friendId).map((e) => ({
           gameId: e.gameId,
           title: GAME_BY_ID[e.gameId]?.title,
@@ -111,7 +112,7 @@ export function ReadTools() {
     },
     execute: (input) => {
       let games = filterGames(GAMES, {
-        genres: input.genres ?? [],
+        genres: toArray(input.genres),
         minPlayers: input.minPlayers,
         coop: input.coop,
         maxSessionMinutes: input.maxSessionMinutes,
@@ -142,7 +143,7 @@ export function ReadTools() {
       additionalProperties: false,
     },
     execute: (input) =>
-      input.gameIds.map((id) => {
+      toArray(input.gameIds).map((id) => {
         const game = GAME_BY_ID[id];
         if (!game) return { gameId: id, error: "not found" };
         const friendsWhoOwn = friends.filter((f) => ownsGame(f.id, id)).map((f) => ({ id: f.id, name: f.name }));

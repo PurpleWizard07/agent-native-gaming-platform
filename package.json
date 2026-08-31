@@ -8,7 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check-funnel": "tsx scripts/check-funnel.ts"
+    "check-funnel": "tsx scripts/check-funnel.ts",
+    "test:ui": "node scripts/verify-ui.mjs",
+    "test:party": "node scripts/verify-party.mjs",
+    "test:webmcp": "node scripts/verify-webmcp.mjs",
+    "test:evals": "webmcp-evals smoke -u http://localhost:8888/store -e evals/webmcp-evals.json --chrome-channel chrome -v"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.2",
@@ -28,6 +32,7 @@
     "playwright": "^1.62.1",
     "tsx": "^4.23.13",
     "typescript": "~6.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "webmcp-evals": "^0.0.4"
   }
 }
