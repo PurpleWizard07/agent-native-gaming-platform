@@ -11,6 +11,20 @@ function computeStatus(members: PartyMember[], previousStatus: PartyState["statu
   return !pending && anyAccepted ? "ready" : "forming";
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// A read immediately after a create can briefly miss the write (observed on
+// production, not on local `netlify dev`) — one short retry covers it
+// without masking a genuinely absent party.
+async function getCurrentParty(store: ReturnType<typeof getStore>): Promise<PartyState | null> {
+  const first = (await store.get(KEY, { type: "json" })) as PartyState | null;
+  if (first) return first;
+  await sleep(250);
+  return (await store.get(KEY, { type: "json" })) as PartyState | null;
+}
+
 export default async (req: Request) => {
   const store = getStore("party");
 
@@ -49,7 +63,7 @@ export default async (req: Request) => {
     return Response.json(party);
   }
 
-  const current = (await store.get(KEY, { type: "json" })) as PartyState | null;
+  const current = await getCurrentParty(store);
   if (!current) {
     return Response.json({ error: "no active party" }, { status: 404 });
   }
