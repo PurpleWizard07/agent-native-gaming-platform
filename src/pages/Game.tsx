@@ -1,13 +1,18 @@
-import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { GAME_BY_ID } from "../data/games";
 import { ownsGame } from "../data/libraries";
 import { useSession } from "../state/SessionContext";
+import { useParty } from "../state/PartyContext";
 import { GameCover } from "../components/GameCover";
 
 export function GamePage() {
   const { gameId } = useParams();
   const game = gameId ? GAME_BY_ID[gameId] : undefined;
-  const { library, friends } = useSession();
+  const { viewer, library, friends } = useSession();
+  const { createParty } = useParty();
+  const navigate = useNavigate();
+  const [starting, setStarting] = useState(false);
 
   if (!game) {
     return (
@@ -97,12 +102,17 @@ export function GamePage() {
       </section>
 
       <section>
-        <Link
-          to="/party"
-          className="inline-block rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+        <button
+          disabled={starting}
+          onClick={async () => {
+            setStarting(true);
+            await createParty(game.id, viewer.id);
+            navigate("/party");
+          }}
+          className="inline-block rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
         >
           Play
-        </Link>
+        </button>
       </section>
     </div>
   );

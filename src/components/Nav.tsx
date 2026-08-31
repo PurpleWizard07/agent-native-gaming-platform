@@ -1,15 +1,20 @@
 import { NavLink } from "react-router-dom";
 import { UserSwitcher } from "./UserSwitcher";
+import { useSession } from "../state/SessionContext";
+import { useParty } from "../state/PartyContext";
 
 const LINKS = [
   { to: "/", label: "Home", end: true },
   { to: "/store", label: "Store" },
   { to: "/library", label: "Library" },
   { to: "/friends", label: "Friends" },
-  { to: "/party", label: "Party" },
 ];
 
 export function Nav() {
+  const { viewer } = useSession();
+  const { party } = useParty();
+  const pendingInvite = party?.members.some((m) => m.userId === viewer.id && m.state === "invited") ?? false;
+
   return (
     <header className="sticky top-0 z-20 border-b border-neutral-800 bg-neutral-950/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
@@ -25,6 +30,13 @@ export function Nav() {
               {link.label}
             </NavLink>
           ))}
+          <NavLink
+            to="/party"
+            className={({ isActive }) => `relative ${isActive ? "font-medium text-white" : "text-neutral-400 hover:text-neutral-200"}`}
+          >
+            Party
+            {pendingInvite && <span className="absolute -right-2.5 -top-1 h-2 w-2 rounded-full bg-violet-500" />}
+          </NavLink>
         </nav>
         <div className="ml-auto">
           <UserSwitcher />
