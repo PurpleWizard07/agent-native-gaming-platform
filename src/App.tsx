@@ -1,28 +1,33 @@
-import { useState } from "react";
-import { useTool } from "./webmcp/useTool";
+import { Route, Routes } from "react-router-dom";
+import { Nav } from "./components/Nav";
+import { SessionProvider } from "./state/SessionContext";
+import { ViewProvider } from "./state/ViewContext";
+import { Home } from "./pages/Home";
+import { Store } from "./pages/Store";
+import { Library } from "./pages/Library";
+import { Friends } from "./pages/Friends";
+import { GamePage } from "./pages/Game";
+import { Party } from "./pages/Party";
 
 function App() {
-  const [pings, setPings] = useState(0);
-
-  useTool({
-    name: "ping",
-    description: "Throwaway diagnostic tool. Increments a counter on the page and returns the new count. Used only to confirm WebMCP tool registration is working during setup.",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
-    execute: () => {
-      let next = 0;
-      setPings((p) => {
-        next = p + 1;
-        return next;
-      });
-      return { pings: next };
-    },
-  });
-
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center gap-4">
-      <h1 className="text-2xl font-semibold">Agent-Native Gaming Platform</h1>
-      <p className="text-neutral-400">Scaffold is live. WebMCP ping count: {pings}</p>
-    </div>
+    <SessionProvider>
+      <ViewProvider>
+        <div className="min-h-screen bg-neutral-950 text-neutral-100">
+          <Nav />
+          <main className="mx-auto max-w-6xl px-4 py-6">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/store" element={<Store />} />
+              <Route path="/library" element={<Library />} />
+              <Route path="/friends" element={<Friends />} />
+              <Route path="/game/:gameId" element={<GamePage />} />
+              <Route path="/party" element={<Party />} />
+            </Routes>
+          </main>
+        </div>
+      </ViewProvider>
+    </SessionProvider>
   );
 }
 
