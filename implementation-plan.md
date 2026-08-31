@@ -2,6 +2,13 @@
 
 Design of record: [webmcp-gaming-platform-concept.md](webmcp-gaming-platform-concept.md).
 
+> **Status: Phases 0–6 complete.** Live at
+> https://agent-native-gaming-platform.netlify.app. Remaining before
+> submission: record the demo video (shot list in
+> [SUBMISSION.md](SUBMISSION.md)), and a live Chrome/ChatGPT in-app browser
+> click-through as a final human check — everything else, including the
+> tool layer, has been verified by script (see README's Verification table).
+
 **Principles for this build**
 
 1. **Deploy on day one.** A live Netlify URL with a placeholder page, before any
