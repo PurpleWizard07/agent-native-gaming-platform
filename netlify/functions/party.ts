@@ -11,22 +11,13 @@ function computeStatus(members: PartyMember[], previousStatus: PartyState["statu
   return !pending && anyAccepted ? "ready" : "forming";
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// A read immediately after a create can briefly miss the write (observed on
-// production, not on local `netlify dev`) — one short retry covers it
-// without masking a genuinely absent party.
-async function getCurrentParty(store: ReturnType<typeof getStore>): Promise<PartyState | null> {
-  const first = (await store.get(KEY, { type: "json" })) as PartyState | null;
-  if (first) return first;
-  await sleep(250);
-  return (await store.get(KEY, { type: "json" })) as PartyState | null;
-}
-
 export default async (req: Request) => {
-  const store = getStore("party");
+  // Blobs reads default to eventual consistency, which means the read at the
+  // start of an invite/respond/launch can miss the write from the create that
+  // just happened — reproducible on production, never on `netlify dev`, whose
+  // local emulation is trivially strong. Every action here is a
+  // read-modify-write on a single key, so it needs strong reads throughout.
+  const store = getStore("party", { consistency: "strong" });
 
   if (req.method === "GET") {
     const party = await store.get(KEY, { type: "json" });
@@ -63,7 +54,7 @@ export default async (req: Request) => {
     return Response.json(party);
   }
 
-  const current = await getCurrentParty(store);
+  const current = (await store.get(KEY, { type: "json" })) as PartyState | null;
   if (!current) {
     return Response.json({ error: "no active party" }, { status: 404 });
   }
