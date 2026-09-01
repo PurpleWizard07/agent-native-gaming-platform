@@ -183,6 +183,7 @@ in:
 | `npm run test:ui` | Every page renders without console errors, at desktop and 390px widths |
 | `npm run test:party` | Two independent browser sessions (Purple + Alex) exchange a real invite through the live backend |
 | `npm run test:webmcp` | The 12 tools' registration and `execute()` logic, via a shimmed `document.modelContext` |
+| `npm run test:view` | `get_current_view` matches the rendered DOM on a fresh page load, after a hand-set filter, and across navigation — the hero demo's first beat |
 | `npm run test:evals` | [`evals/webmcp-evals.json`](./evals/webmcp-evals.json) run with [`webmcp-evals smoke`](https://github.com/GoogleChromeLabs/webmcp-tools/tree/main/webmcp-evals) against **real Chrome** — no shim, no LLM/API key needed |
 
 `test:party`, `test:webmcp`, and `test:evals` need `netlify dev` running in

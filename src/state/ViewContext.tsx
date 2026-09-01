@@ -35,12 +35,15 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   const [visibleGameIds, setVisibleGameIds] = useState<string[]>([]);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
-  // Reset per-view state on navigation so filters don't leak from Store into
-  // Library or vice versa.
+  // Reset filters on navigation so Store's filters don't leak into Library or
+  // vice versa. Deliberately does NOT clear visibleGameIds/selectedGameId:
+  // React runs child effects before parent ones, so clearing them here would
+  // wipe the values the page being mounted has just published, leaving
+  // get_current_view reporting an empty screen until a filter changed. The
+  // mounted page is the sole owner of those two; resetting filters is enough,
+  // since that re-runs the page's own sync effect.
   useEffect(() => {
     setFilters(EMPTY_FILTERS);
-    setVisibleGameIds([]);
-    setSelectedGameId(null);
   }, [location.pathname]);
 
   const value = useMemo<ViewContextValue>(

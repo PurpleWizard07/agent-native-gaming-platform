@@ -12,6 +12,7 @@
     "test:ui": "node scripts/verify-ui.mjs",
     "test:party": "node scripts/verify-party.mjs",
     "test:webmcp": "node scripts/verify-webmcp.mjs",
+    "test:view": "node scripts/verify-view-sync.mjs",
     "test:evals": "webmcp-evals smoke -u http://localhost:8888/store -e evals/webmcp-evals.json --chrome-channel chrome -v"
   },
   "dependencies": {
