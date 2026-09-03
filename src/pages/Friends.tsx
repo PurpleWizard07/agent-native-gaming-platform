@@ -1,5 +1,6 @@
 import { useSession } from "../state/SessionContext";
 import { GAME_BY_ID } from "../data/games";
+import { Avatar } from "../components/Avatar";
 
 export function Friends() {
   const { friends } = useSession();
@@ -28,18 +29,9 @@ export function Friends() {
                 key={friend.id}
                 className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3"
               >
-                <span
-                  className="h-2.5 w-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: friend.avatar }}
-                />
+                <Avatar user={friend} showPresence />
                 <span className="font-medium text-neutral-100">{friend.name}</span>
-                <span
-                  className={
-                    "h-2 w-2 rounded-full shrink-0 " +
-                    (friend.presence === "online" ? "bg-emerald-500" : "bg-neutral-600")
-                  }
-                />
-                <span className="text-sm text-neutral-400 truncate">{statusText}</span>
+                <span className="ml-auto text-sm text-neutral-400 truncate">{statusText}</span>
               </div>
             );
           })}

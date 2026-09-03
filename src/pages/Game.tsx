@@ -1,18 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GAME_BY_ID } from "../data/games";
 import { ownsGame } from "../data/libraries";
 import { useSession } from "../state/SessionContext";
 import { useParty } from "../state/PartyContext";
+import { useView } from "../state/ViewContext";
 import { GameCover } from "../components/GameCover";
+import { Avatar } from "../components/Avatar";
+import { playerCountLabel, sessionLengthLabel } from "../lib/formatGame";
 
 export function GamePage() {
   const { gameId } = useParams();
   const game = gameId ? GAME_BY_ID[gameId] : undefined;
   const { viewer, library, friends } = useSession();
   const { createParty } = useParty();
+  const { setSelectedGameId } = useView();
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
+
+  // Publish the game in focus so get_current_view can answer "this game" while
+  // the player is here. This page is the sole owner of that value, so it also
+  // clears it on the way out rather than leaving a stale id behind.
+  useEffect(() => {
+    if (!game) return;
+    setSelectedGameId(game.id);
+    return () => setSelectedGameId(null);
+  }, [game, setSelectedGameId]);
 
   if (!game) {
     return (
@@ -28,12 +41,8 @@ export function GamePage() {
   const owned = library.some((e) => e.gameId === game.id);
   const owningFriends = friends.filter((f) => ownsGame(f.id, game.id));
 
-  const playerLabel =
-    game.minPlayers === game.maxPlayers
-      ? `${game.minPlayers} players`
-      : `${game.minPlayers}-${game.maxPlayers} players`;
-
-  const sessionLabel = `${game.sessionMinutes.min}-${game.sessionMinutes.max} min`;
+  const playerLabel = playerCountLabel(game);
+  const sessionLabel = sessionLengthLabel(game);
 
   const coopLabel =
     game.coopModes.length === 0
@@ -92,8 +101,9 @@ export function GamePage() {
             {owningFriends.map((friend) => (
               <span
                 key={friend.id}
-                className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300"
+                className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300"
               >
+                <Avatar user={friend} showPresence />
                 {friend.name}
               </span>
             ))}

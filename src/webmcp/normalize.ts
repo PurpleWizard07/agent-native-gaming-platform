@@ -1,5 +1,5 @@
 // Tool schemas declare these fields as arrays, but a caller occasionally
-// sends a bare string for a single value (confirmed via scripts/run-evals.sh
+// sends a bare string for a single value (confirmed via `npm run test:evals`
 // smoke testing against real Chrome) — normalize rather than crash or,
 // worse, silently iterate the string's characters.
 export function toArray(value: unknown): string[] {

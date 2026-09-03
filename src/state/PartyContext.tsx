@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PartyAction, PartyState } from "../types/party";
+import { roomId } from "../lib/room";
 
 const POLL_MS = 1500;
 
 interface PartyContextValue {
   party: PartyState | null;
   loading: boolean;
+  /** The room this browser's party lives in — see src/lib/room.ts. */
+  room: string;
   createParty: (gameId: string, hostId: string) => Promise<PartyState>;
   inviteFriends: (friendIds: string[]) => Promise<PartyState>;
   respond: (userId: string, accept: boolean) => Promise<PartyState>;
@@ -15,8 +18,12 @@ interface PartyContextValue {
 
 const PartyContext = createContext<PartyContextValue | null>(null);
 
+function partyUrl(): string {
+  return `/api/party?room=${encodeURIComponent(roomId())}`;
+}
+
 async function callApi(body: PartyAction): Promise<PartyState | null> {
-  const res = await fetch("/api/party", {
+  const res = await fetch(partyUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -37,7 +44,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
 
     async function poll() {
       try {
-        const res = await fetch("/api/party");
+        const res = await fetch(partyUrl());
         const data = await res.json();
         if (!cancelled) setParty(data);
       } catch {
@@ -58,6 +65,7 @@ export function PartyProvider({ children }: { children: ReactNode }) {
   const value: PartyContextValue = {
     party,
     loading,
+    room: roomId(),
     createParty: async (gameId, hostId) => {
       const updated = await callApi({ action: "create", gameId, hostId });
       setParty(updated);

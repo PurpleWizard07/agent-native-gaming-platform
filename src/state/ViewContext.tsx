@@ -3,11 +3,14 @@ import { useLocation } from "react-router-dom";
 
 export interface Filters {
   genres: string[];
+  /** Free-text search over title and genre — the Store's search box. */
+  query?: string;
   minPlayers?: number;
   coop?: boolean;
   maxSessionMinutes?: number;
   onlyUnfinished?: boolean;
   onlyInstalled?: boolean;
+  onlyUnplayed?: boolean;
 }
 
 export const EMPTY_FILTERS: Filters = { genres: [] };
@@ -25,9 +28,21 @@ interface ViewContextValue {
 
 const ViewContext = createContext<ViewContextValue | null>(null);
 
-// Only Store and Library publish filters/visibleGameIds; this is also the
-// gate the page-context WebMCP tools use to register only on those pages.
+/** Pages with a filterable list — the only ones apply_filters makes sense on. */
 export const FILTERABLE_PAGES = ["/store", "/library"];
+
+export function isGamePage(page: string): boolean {
+  return page.startsWith("/game/");
+}
+
+/**
+ * Pages where the player is looking at a game surface, so "what am I looking
+ * at?" has an answer worth reporting. Store and Library answer with a list;
+ * a game page answers with the one game in focus.
+ */
+export function hasViewContext(page: string): boolean {
+  return FILTERABLE_PAGES.includes(page) || isGamePage(page);
+}
 
 export function ViewProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -40,8 +55,9 @@ export function ViewProvider({ children }: { children: ReactNode }) {
   // React runs child effects before parent ones, so clearing them here would
   // wipe the values the page being mounted has just published, leaving
   // get_current_view reporting an empty screen until a filter changed. The
-  // mounted page is the sole owner of those two; resetting filters is enough,
-  // since that re-runs the page's own sync effect.
+  // mounted page is the sole owner of those two — each clears its own on
+  // unmount — so resetting filters is enough, since that re-runs the page's
+  // own sync effect.
   useEffect(() => {
     setFilters(EMPTY_FILTERS);
   }, [location.pathname]);

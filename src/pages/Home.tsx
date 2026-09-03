@@ -2,6 +2,14 @@ import { GAME_BY_ID, GAMES } from "../data/games";
 import { ownsGame } from "../data/libraries";
 import { useSession } from "../state/SessionContext";
 import { GameCard } from "../components/GameCard";
+import { Avatar } from "../components/Avatar";
+
+function greeting(hour: number): string {
+  if (hour < 5) return "Still up";
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 export function Home() {
   const { viewer, library, friends } = useSession();
@@ -26,7 +34,9 @@ export function Home() {
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-2xl font-bold text-neutral-100">Good evening, {viewer.name}</h1>
+        <h1 className="text-2xl font-bold text-neutral-100">
+          {greeting(new Date().getHours())}, {viewer.name}
+        </h1>
       </section>
 
       <section>
@@ -52,10 +62,7 @@ export function Home() {
           <div className="flex flex-col gap-3 rounded-lg border border-neutral-800 bg-neutral-900 p-4">
             {friendsOnline.map((friend) => (
               <div key={friend.id} className="flex items-center gap-3">
-                <span
-                  className="h-2 w-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: friend.avatar }}
-                />
+                <Avatar user={friend} showPresence />
                 <span className="text-sm text-neutral-100">{friend.name}</span>
                 <span className="text-sm text-neutral-500">
                   {friend.playingGameId

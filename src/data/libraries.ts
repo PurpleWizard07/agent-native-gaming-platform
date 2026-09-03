@@ -15,7 +15,7 @@ export interface LibraryEntry {
  * ("Alex, Sam, Maya online, ~75 min, co-op, nothing anyone's finished")
  * resolves to exactly one clean answer (Nightfall Signal) plus one legible
  * near-miss (Ridge Runners, which fails only because Sam has finished it) —
- * see scripts/check-funnel.mjs, which asserts this holds.
+ * see scripts/check-funnel.ts, which asserts this holds.
  */
 const OWNERSHIP: Record<string, string[]> = {
   "nightfall-signal": ["purple", "alex", "sam", "maya"],
@@ -77,6 +77,13 @@ const OVERRIDES: Record<string, Partial<LibraryEntry>> = {
   "sam:tin-can-regatta": { completed: false, playtimeMinutes: 95, installed: true, lastPlayedAt: "2026-08-16" },
   "maya:tin-can-regatta": { completed: true, playtimeMinutes: 180, installed: true, lastPlayedAt: "2026-08-20" },
 
+  // Backlog — bought and never launched, so "what have I never started?"
+  // has a real answer. Neither game reaches the hero funnel's completion
+  // step (Cascade Protocol is Purple-only; Skybound Cartographers is cut
+  // earlier for not supporting four players), so this can't disturb it.
+  "purple:cascade-protocol": { completed: false, playtimeMinutes: 0, installed: true, lastPlayedAt: null },
+  "purple:skybound-cartographers": { completed: false, playtimeMinutes: 0, installed: false, lastPlayedAt: null },
+
   // Secondary demo beats — resume, backlog, presence.
   "purple:ashen-frontier": { completed: false, playtimeMinutes: 890, installed: true, lastPlayedAt: "2026-08-17" },
   "purple:quiet-orchard": { completed: false, playtimeMinutes: 35, installed: true, lastPlayedAt: "2026-07-30" },
@@ -122,13 +129,20 @@ function buildLibrary(): LibraryEntry[] {
       const r3 = seeded(`${key}:installed`);
       const r4 = seeded(`${key}:date`);
 
+      // A null last-played date means never launched, so playtime and
+      // completion have to agree with it. Generating them independently
+      // produced entries claiming 300 minutes played on a game that had
+      // never been started.
+      const lastPlayedAt = FALLBACK_DATES[Math.floor(r4 * FALLBACK_DATES.length)];
+      const neverStarted = lastPlayedAt === null;
+
       entries.push({
         userId,
         gameId: game.id,
-        playtimeMinutes: Math.round(30 + r1 * 500),
-        completed: r2 < 0.3,
+        playtimeMinutes: neverStarted ? 0 : Math.round(30 + r1 * 500),
+        completed: neverStarted ? false : r2 < 0.3,
         installed: r3 < 0.75,
-        lastPlayedAt: FALLBACK_DATES[Math.floor(r4 * FALLBACK_DATES.length)],
+        lastPlayedAt,
       });
     }
   }

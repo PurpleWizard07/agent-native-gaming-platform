@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Game } from "../data/games";
 import { GameCover } from "./GameCover";
-
-function playerCountLabel(game: Game): string {
-  return game.minPlayers === game.maxPlayers ? `${game.maxPlayers} players` : `${game.minPlayers}-${game.maxPlayers} players`;
-}
+import { playerCountLabel, sessionLengthLabel } from "../lib/formatGame";
 
 export function GameCard({ game, owned }: { game: Game; owned?: boolean }) {
   return (
@@ -19,7 +16,7 @@ export function GameCard({ game, owned }: { game: Game; owned?: boolean }) {
           ))}
         </div>
         <div className="text-xs text-neutral-400">
-          {playerCountLabel(game)} · {game.sessionMinutes.min}-{game.sessionMinutes.max} min
+          {playerCountLabel(game)} · {sessionLengthLabel(game)}
         </div>
         {owned && <div className="text-xs font-medium text-emerald-400">You own this</div>}
       </div>
