@@ -10,7 +10,7 @@ await page.waitForSelector("text=Store");
 await page.screenshot({ path: "scripts/.verify-screens/mobile-store.png" });
 
 await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
-await page.waitForSelector("text=Good evening");
+await page.waitForSelector("text=Continue Playing");
 await page.screenshot({ path: "scripts/.verify-screens/mobile-home.png" });
 
 await browser.close();

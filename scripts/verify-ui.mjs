@@ -20,7 +20,7 @@ async function shot(name) {
 
 console.log("--- Home ---");
 await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
-await page.waitForSelector("text=Good evening");
+await page.waitForSelector("text=Continue Playing");
 await shot("01-home");
 
 console.log("--- Store ---");

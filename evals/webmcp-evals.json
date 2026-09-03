@@ -5,7 +5,7 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play, preferably something none of us has finished."
+        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
       }
     ],
     "expectedCall": [
@@ -31,7 +31,7 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play, preferably something none of us has finished."
+        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
       },
       { "role": "assistant", "type": "message", "content": "I'd recommend Nightfall Signal — all four of you own it, it's 4-player co-op, sessions run 45-70 minutes, and nobody has finished it. Ridge Runners is a close second, but Sam has already completed it." },
       { "role": "user", "type": "message", "content": "Let's play Nightfall Signal." }
@@ -64,7 +64,7 @@
     "expectedCall": [
       {
         "functionName": "get_my_library",
-        "arguments": { "onlyUnfinished": true }
+        "arguments": { "onlyUnplayed": true }
       }
     ]
   },

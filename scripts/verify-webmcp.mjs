@@ -5,26 +5,32 @@
 // shape matches Chrome's exactly — see implementation-plan.md Phase 0/5 for
 // the live check that still needs a real browser.
 import { chromium } from "playwright";
+import fs from "node:fs";
+
+const outDir = "scripts/.verify-screens";
+fs.mkdirSync(outDir, { recursive: true });
 
 const BASE = process.env.BASE_URL ?? "http://localhost:8888";
+// Parties are namespaced per room (src/lib/room.ts); pin a test-only one so
+// this run can't collide with a live demo party.
+const ROOM = "verify-webmcp";
+const API = `${BASE}/api/party?room=${ROOM}`;
+const url = (path) => `${BASE}${path}${path.includes("?") ? "&" : "?"}room=${ROOM}`;
 
-async function reset() {
-  await fetch(`${BASE}/api/party`, {
+async function api(body) {
+  return fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "reset" }),
+    body: JSON.stringify(body),
   });
 }
+const reset = () => api({ action: "reset" });
 await reset();
 
-const browser = await chromium.launch();
-const page = await browser.newPage();
-
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
-page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-
-await page.addInitScript(() => {
+// Installs the shim BEFORE any page script runs, i.e. the easy case where the
+// WebMCP API is already there at mount. The late-injection case is covered at
+// the bottom of this file.
+const SHIM = () => {
   window.__tools = [];
   window.document.modelContext = {
     registerTool: (descriptor, opts) => {
@@ -35,20 +41,46 @@ await page.addInitScript(() => {
       return Promise.resolve();
     },
   };
+};
+
+const browser = await chromium.launch();
+const page = await browser.newPage();
+
+const errors = [];
+// The error-path tests below deliberately provoke a 404 from /api/party, which
+// the browser logs as a console error. Only those are exempt, and only while a
+// test is actually asking for one.
+let expectingApiError = false;
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => {
+  if (m.type() !== "error") return;
+  if (expectingApiError && m.text().includes("404")) return;
+  errors.push(m.text());
 });
 
-async function toolNames() {
-  return page.evaluate(() => window.__tools.map((t) => t.name).sort());
+await page.addInitScript(SHIM);
+
+async function toolNames(target = page) {
+  return target.evaluate(() => window.__tools.map((t) => t.name).sort());
 }
 
+// Returns the parsed payload; throws if the tool reported an error, so the
+// happy-path assertions below stay terse.
 async function callTool(name, input = {}) {
-  return page.evaluate(
+  const raw = await callToolRaw(name, input);
+  if (raw.isError) throw new Error(`tool ${name} errored: ${raw.text}`);
+  return JSON.parse(raw.text);
+}
+
+// The unwrapped result, for asserting on the error shape itself.
+async function callToolRaw(name, input = {}, target = page) {
+  return target.evaluate(
     async ([name, input]) => {
       const tool = window.__tools.find((t) => t.name === name);
       if (!tool) throw new Error(`tool not registered: ${name}`);
       const controller = new AbortController();
       const result = await tool.execute(input, { signal: controller.signal });
-      return JSON.parse(result.content[0].text);
+      return { text: result.content[0].text, isError: result.isError === true };
     },
     [name, input],
   );
@@ -60,22 +92,59 @@ function assert(cond, msg) {
 }
 
 console.log("--- Home: only global tools should be registered (no page-context tools) ---");
-await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-await page.waitForSelector("text=Good evening");
+await page.goto(url("/"), { waitUntil: "networkidle" });
+await page.waitForSelector("text=Continue Playing");
 const homeTools = await toolNames();
 console.log(homeTools.join(", "));
 assert(homeTools.length === 9, `9 tools on Home (got ${homeTools.length})`);
 assert(!homeTools.includes("get_current_view"), "get_current_view NOT registered on Home");
 assert(!homeTools.includes("apply_filters"), "apply_filters NOT registered on Home");
 assert(!homeTools.includes("open_game"), "open_game NOT registered on Home");
+assert(!homeTools.includes("respond_to_invite"), "respond_to_invite NOT registered with no invite pending");
+
+console.log("\n--- annotations: reads are marked read-only, writes are not ---");
+const annotated = await page.evaluate(() =>
+  window.__tools.map((t) => [t.name, t.annotations?.readOnlyHint]),
+);
+const byName = Object.fromEntries(annotated);
+assert(
+  ["get_online_friends", "get_my_library", "get_friend_libraries", "search_games", "get_game_details", "get_party_status"].every(
+    (n) => byName[n] === true,
+  ),
+  "every read tool declares readOnlyHint: true",
+);
+assert(
+  ["create_party", "invite_friends", "launch_session"].every((n) => byName[n] === false),
+  "every mutating tool declares readOnlyHint: false",
+);
 
 console.log("\n--- get_online_friends ---");
 const onlineFriends = await callTool("get_online_friends");
 console.log(onlineFriends);
-assert(onlineFriends.some((f) => f.id === "alex" && f.playingGameId === "ridge-runners"), "Alex shows as playing Ridge Runners");
+assert(
+  onlineFriends.some((f) => f.id === "alex" && f.playingGameId === "ridge-runners"),
+  "Alex shows as playing Ridge Runners",
+);
+assert(
+  onlineFriends.some((f) => f.id === "alex" && f.playingGameTitle === "Ridge Runners"),
+  "playingGameTitle saves a get_game_details round trip",
+);
+
+console.log("\n--- structured errors: a party action with no party is legible, not opaque ---");
+expectingApiError = true;
+const noParty = await callToolRaw("invite_friends", { friendIds: ["alex"] });
+console.log(noParty);
+assert(noParty.isError === true, "invite_friends with no active party reports isError");
+assert(JSON.parse(noParty.text).error === "no active party", "the error text names the cause the agent can recover from");
+
+console.log("\n--- launch_session with no party explains itself rather than just failing ---");
+const notReady = await callTool("launch_session");
+console.log(notReady);
+assert(notReady.status === "not_ready" && notReady.reason === "no active party", "launch_session reports why it can't launch");
+expectingApiError = false;
 
 console.log("\n--- Store: all 12 tools should be registered ---");
-await page.goto(`${BASE}/store`, { waitUntil: "networkidle" });
+await page.goto(url("/store"), { waitUntil: "networkidle" });
 await page.waitForSelector("text=Store");
 const storeTools = await toolNames();
 console.log(storeTools.join(", "));
@@ -86,6 +155,30 @@ const searchResult = await callTool("search_games", { coop: true, minPlayers: 4,
 console.log(searchResult.map((g) => g.title));
 assert(searchResult.some((g) => g.gameId === "nightfall-signal"), "search_games surfaces Nightfall Signal");
 assert(searchResult.some((g) => g.gameId === "ridge-runners"), "search_games surfaces Ridge Runners");
+
+// A 60-120 min game can technically be played in 75 minutes, but recommending
+// it to someone with 75 minutes is wrong. The old rule only compared the
+// SHORTEST session to the budget and let this through.
+const budgeted = await callTool("search_games", { maxSessionMinutes: 75 });
+assert(
+  !budgeted.some((g) => g.gameId === "windward-traders"),
+  "a 60-120 min game does NOT satisfy a 75 minute budget",
+);
+assert(budgeted.some((g) => g.gameId === "nightfall-signal"), "a 45-70 min game does satisfy a 75 minute budget");
+
+console.log("\n--- search_games: free-text query covers title and genre ---");
+const byTitle = await callTool("search_games", { query: "nightfall" });
+assert(byTitle.length === 1 && byTitle[0].gameId === "nightfall-signal", "query matches a title");
+const byGenre = await callTool("search_games", { query: "horror" });
+assert(byGenre.length > 0 && byGenre.every((g) => g.genres.some((x) => x.toLowerCase() === "horror")), "query matches a genre");
+
+console.log("\n--- get_my_library: onlyUnplayed is stricter than onlyUnfinished ---");
+const unfinished = await callTool("get_my_library", { onlyUnfinished: true });
+const unplayed = await callTool("get_my_library", { onlyUnplayed: true });
+console.log("unfinished:", unfinished.length, "| never started:", unplayed.length);
+assert(unplayed.length > 0, "some owned games have never been started");
+assert(unplayed.every((e) => e.playtimeMinutes === 0), "onlyUnplayed returns only zero-playtime games");
+assert(unplayed.length < unfinished.length, "onlyUnplayed is a strict subset of onlyUnfinished");
 
 console.log("\n--- get_friend_libraries: alex, sam, maya ---");
 const friendLibs = await callTool("get_friend_libraries", { friendIds: ["alex", "sam", "maya"] });
@@ -102,6 +195,11 @@ assert(details[0].friendsWhoOwn.length === 3, "Nightfall Signal detail lists all
 console.log("\n--- apply_filters, then get_current_view reflects it ---");
 await callTool("apply_filters", { coop: true, minPlayers: 4 });
 await page.waitForTimeout(150);
+
+// An agent changing the screen has to be visible to the human supervising it.
+const toast = page.getByRole("status");
+assert(await toast.getByText("Filters updated").isVisible(), "an agent-applied filter raises a visible toast");
+await page.screenshot({ path: `${outDir}/webmcp-01-agent-toast.png` });
 const view = await callTool("get_current_view");
 console.log("visible games after filter:", view.visibleGames);
 assert(view.page === "/store", "get_current_view reports page=/store");
@@ -119,9 +217,21 @@ assert(
 console.log("\n--- open_game navigates the real page ---");
 const openResult = await callTool("open_game", { gameId: "nightfall-signal" });
 console.log(openResult);
-await page.waitForURL(/\/game\/nightfall-signal$/);
+await page.waitForURL(/\/game\/nightfall-signal/);
 await page.waitForSelector("h1:has-text('Nightfall Signal')");
 assert(true, "open_game navigated the browser to the game page");
+
+console.log("\n--- game page: view context follows the player, minus the tools that make no sense there ---");
+const gamePageTools = await toolNames();
+console.log(gamePageTools.join(", "));
+assert(gamePageTools.includes("get_current_view"), "get_current_view IS registered on a game page");
+assert(gamePageTools.includes("open_game"), "open_game IS registered on a game page");
+assert(!gamePageTools.includes("apply_filters"), "apply_filters is NOT registered on a game page (nothing to filter)");
+const gameView = await callTool("get_current_view");
+console.log(gameView);
+assert(gameView.selectedGameId === "nightfall-signal", "get_current_view names the game in focus");
+assert(gameView.selectedGame === "Nightfall Signal", "get_current_view names the focused game's title");
+assert(gameView.visibleGameIds === undefined, "a game page does NOT report the stale list from the page before it");
 
 console.log("\n--- full party flow via tools: create -> invite -> status ---");
 await callTool("create_party", { gameId: "nightfall-signal" });
@@ -130,14 +240,18 @@ console.log(afterInvite);
 const status1 = await callTool("get_party_status");
 assert(status1.active === true && status1.status === "forming", "party is 'forming' right after inviting");
 assert(status1.readyToLaunch === false, "readyToLaunch is false before anyone accepts");
+assert(status1.gameTitle === "Nightfall Signal", "get_party_status names the game");
+assert(status1.members.every((m) => typeof m.name === "string"), "get_party_status names each member");
+
+console.log("\n--- launch_session names who it is waiting on ---");
+const waiting = await callTool("launch_session");
+console.log(waiting);
+assert(waiting.status === "not_ready", "launch_session refuses while members are still invited");
+assert(waiting.waitingOn.sort().join(",") === "Alex,Maya,Sam", "launch_session names exactly who has not responded");
 
 // Simulate Alex/Sam/Maya accepting via the same API the UI uses.
 for (const id of ["alex", "sam", "maya"]) {
-  await fetch(`${BASE}/api/party`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "respond", userId: id, accept: true }),
-  });
+  await api({ action: "respond", userId: id, accept: true });
 }
 await page.waitForTimeout(1800); // let PartyContext's poll pick it up
 
@@ -147,6 +261,48 @@ assert(status2.status === "ready" && status2.readyToLaunch === true, "party beco
 const launchResult = await callTool("launch_session");
 console.log(launchResult);
 assert(launchResult.status === "launching", "launch_session returns status: launching");
+
+console.log("\n--- respond_to_invite appears only in a session that has an invite pending ---");
+await reset();
+await api({ action: "create", gameId: "nightfall-signal", hostId: "purple" });
+await api({ action: "invite", friendIds: ["alex"] });
+
+await page.goto(url("/party"), { waitUntil: "networkidle" });
+await page.getByLabel("View as").selectOption({ label: "Alex" });
+await page.waitForSelector("text=You've been invited");
+const alexTools = await toolNames();
+console.log(alexTools.join(", "));
+assert(alexTools.includes("respond_to_invite"), "respond_to_invite IS registered while Alex has a pending invite");
+
+const responded = await callTool("respond_to_invite", { accept: true });
+console.log(responded);
+assert(responded.accepted === true, "respond_to_invite accepts on the invited player's behalf");
+assert(
+  responded.members.find((m) => m.userId === "alex")?.state === "accepted",
+  "the shared party state records Alex as accepted",
+);
+await page.waitForSelector("text=Accepted");
+await page.waitForTimeout(300);
+assert(
+  !(await toolNames()).includes("respond_to_invite"),
+  "respond_to_invite unregisters once there is nothing left to respond to",
+);
+
+console.log("\n--- late-injected document.modelContext still gets the tools ---");
+// An agent host that installs the WebMCP API after first paint used to end up
+// with zero registered tools, silently. No addInitScript here on purpose.
+const lateCtx = await browser.newContext();
+const latePage = await lateCtx.newPage();
+await latePage.goto(url("/store"), { waitUntil: "networkidle" });
+const beforeInjection = await latePage.evaluate(() => window.__tools?.length ?? "no shim yet");
+await latePage.evaluate(SHIM);
+await latePage.waitForFunction(() => (window.__tools?.length ?? 0) >= 12, null, { timeout: 5000 });
+const lateTools = await toolNames(latePage);
+console.log("before injection:", beforeInjection, "| after:", lateTools.length);
+assert(lateTools.length === 12, `all 12 Store tools register after a late injection (got ${lateTools.length})`);
+const lateView = await callToolRaw("get_current_view", {}, latePage);
+assert(JSON.parse(lateView.text).page === "/store", "a late-registered tool actually executes");
+await lateCtx.close();
 
 await browser.close();
 await reset();
