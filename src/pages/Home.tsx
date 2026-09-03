@@ -1,7 +1,9 @@
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { GAME_BY_ID, GAMES, type Game } from "../data/games";
 import { ownsGame } from "../data/libraries";
 import { useSession } from "../state/SessionContext";
+import { useView } from "../state/ViewContext";
 import { GameCard } from "../components/GameCard";
 import { Avatar } from "../components/Avatar";
 
@@ -21,6 +23,7 @@ const POPULAR_LIMIT = 12;
 
 export function Home() {
   const { viewer, library, friends } = useSession();
+  const { setVisibleGameIds } = useView();
 
   const continuePlaying = library
     .filter((entry) => entry.installed && !entry.completed && entry.playtimeMinutes > 0)
@@ -51,6 +54,21 @@ export function Home() {
     0,
     POPULAR_LIMIT,
   );
+
+  // Home has no filter bar, but it does show game cards, so "what am I looking
+  // at?" has a real answer here. Publishing it keeps get_current_view honest on
+  // the page most visitors actually land on. Keyed on the joined ids because
+  // both grids are rebuilt on every render.
+  const visibleKey = [
+    ...new Set([...continuePlaying.map((g) => g.id), ...popularForYou.map((g) => g.id)]),
+  ].join(",");
+
+  const visibleIds = useMemo(() => (visibleKey ? visibleKey.split(",") : []), [visibleKey]);
+
+  useEffect(() => {
+    setVisibleGameIds(visibleIds);
+    return () => setVisibleGameIds([]);
+  }, [visibleIds, setVisibleGameIds]);
 
   return (
     <div className="space-y-6">

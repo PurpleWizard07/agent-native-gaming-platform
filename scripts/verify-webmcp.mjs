@@ -91,15 +91,20 @@ function assert(cond, msg) {
   if (!cond) process.exitCode = 1;
 }
 
-console.log("--- Home: only global tools should be registered (no page-context tools) ---");
+// The view tools used to be gated to Store/Library/game pages, which left a
+// player who landed on Home with no tool that could change the screen — the
+// agent could only read. They now register everywhere and navigate on demand;
+// scripts/verify-agent-drives-ui.mjs covers what that gating used to prevent.
+console.log("--- Home: every tool but the invite responder should be registered ---");
 await page.goto(url("/"), { waitUntil: "networkidle" });
 await page.waitForSelector("text=Continue Playing");
 const homeTools = await toolNames();
 console.log(homeTools.join(", "));
-assert(homeTools.length === 9, `9 tools on Home (got ${homeTools.length})`);
-assert(!homeTools.includes("get_current_view"), "get_current_view NOT registered on Home");
-assert(!homeTools.includes("apply_filters"), "apply_filters NOT registered on Home");
-assert(!homeTools.includes("open_game"), "open_game NOT registered on Home");
+assert(homeTools.length === 13, `13 tools on Home (got ${homeTools.length})`);
+assert(homeTools.includes("get_current_view"), "get_current_view IS registered on Home");
+assert(homeTools.includes("apply_filters"), "apply_filters IS registered on Home");
+assert(homeTools.includes("show_games"), "show_games IS registered on Home");
+assert(homeTools.includes("open_game"), "open_game IS registered on Home");
 assert(!homeTools.includes("respond_to_invite"), "respond_to_invite NOT registered with no invite pending");
 
 console.log("\n--- annotations: reads are marked read-only, writes are not ---");
@@ -143,12 +148,12 @@ console.log(notReady);
 assert(notReady.status === "not_ready" && notReady.reason === "no active party", "launch_session reports why it can't launch");
 expectingApiError = false;
 
-console.log("\n--- Store: all 12 tools should be registered ---");
+console.log("\n--- Store: all 13 tools should be registered ---");
 await page.goto(url("/store"), { waitUntil: "networkidle" });
 await page.waitForSelector("text=Store");
 const storeTools = await toolNames();
 console.log(storeTools.join(", "));
-assert(storeTools.length === 12, `12 tools on Store (got ${storeTools.length})`);
+assert(storeTools.length === 13, `13 tools on Store (got ${storeTools.length})`);
 
 console.log("\n--- search_games: co-op, 4 players, fits 75 min ---");
 const searchResult = await callTool("search_games", { coop: true, minPlayers: 4, maxSessionMinutes: 75 });
@@ -226,7 +231,10 @@ const gamePageTools = await toolNames();
 console.log(gamePageTools.join(", "));
 assert(gamePageTools.includes("get_current_view"), "get_current_view IS registered on a game page");
 assert(gamePageTools.includes("open_game"), "open_game IS registered on a game page");
-assert(!gamePageTools.includes("apply_filters"), "apply_filters is NOT registered on a game page (nothing to filter)");
+// A game page has no filter bar, but apply_filters still registers here: it
+// takes the player back to the Store rather than vanishing from the tool list,
+// which is what an agent needs to act on "show me the co-op ones instead".
+assert(gamePageTools.includes("apply_filters"), "apply_filters IS registered on a game page (it navigates to the Store)");
 const gameView = await callTool("get_current_view");
 console.log(gameView);
 assert(gameView.selectedGameId === "nightfall-signal", "get_current_view names the game in focus");
@@ -299,7 +307,7 @@ await latePage.evaluate(SHIM);
 await latePage.waitForFunction(() => (window.__tools?.length ?? 0) >= 12, null, { timeout: 5000 });
 const lateTools = await toolNames(latePage);
 console.log("before injection:", beforeInjection, "| after:", lateTools.length);
-assert(lateTools.length === 12, `all 12 Store tools register after a late injection (got ${lateTools.length})`);
+assert(lateTools.length === 13, `all 13 Store tools register after a late injection (got ${lateTools.length})`);
 const lateView = await callToolRaw("get_current_view", {}, latePage);
 assert(JSON.parse(lateView.text).page === "/store", "a late-registered tool actually executes");
 await lateCtx.close();

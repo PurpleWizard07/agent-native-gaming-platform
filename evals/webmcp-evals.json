@@ -105,6 +105,20 @@
     ]
   },
   {
+    "name": "Reflect the shortlist on the player's screen",
+    "messages": [
+      { "role": "user", "type": "message", "content": "Justin, Robert and Sarah are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary." },
+      { "role": "assistant", "type": "message", "content": "I'd recommend Nightfall Signal — all four of you own it, it's 4-player co-op, sessions run 45-70 minutes, and nobody has finished it. Ridge Runners is a close second, but Robert has already completed it." },
+      { "role": "user", "type": "message", "content": "Put those on my screen so I can look at them." }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "show_games",
+        "arguments": { "gameIds": { "$contains": "nightfall-signal" } }
+      }
+    ]
+  },
+  {
     "name": "No clean match: designed near-miss",
     "messages": [
       { "role": "user", "type": "message", "content": "Find something co-op, 4 players, under 75 minutes, that Robert hasn't already finished." }

@@ -25,8 +25,14 @@ export function fitsSessionBudget(session: { min: number; max: number }, budgetM
  */
 export function filterGames(games: Game[], filters: Filters, viewerLibrary?: LibraryEntry[]): Game[] {
   const query = filters.query?.trim().toLowerCase();
+  // A pinned shortlist is intersected with the other filters rather than
+  // replacing them, so the predicates stay independent and order-free. In
+  // practice show_games pins onto cleared filters, so the intersection is the
+  // shortlist itself.
+  const pinned = filters.gameIds?.length ? new Set(filters.gameIds) : null;
 
   return games.filter((g) => {
+    if (pinned && !pinned.has(g.id)) return false;
     if (query && !g.title.toLowerCase().includes(query) && !g.genres.some((genre) => genre.toLowerCase().includes(query))) return false;
     if (filters.genres.length > 0 && !filters.genres.some((genre) => g.genres.includes(genre))) return false;
     if (filters.minPlayers != null && g.maxPlayers < filters.minPlayers) return false;

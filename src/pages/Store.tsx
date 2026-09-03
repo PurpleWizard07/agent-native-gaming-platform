@@ -18,6 +18,10 @@ export function Store() {
     setVisibleGameIds(filtered.map((g) => g.id));
   }, [filtered, setVisibleGameIds]);
 
+  // Cleared on unmount so get_current_view on a page with no game list (Friends,
+  // Party) reports an empty screen rather than the list the player left behind.
+  useEffect(() => () => setVisibleGameIds([]), [setVisibleGameIds]);
+
   return (
     <div className="space-y-6">
       <section>

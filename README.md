@@ -4,7 +4,7 @@
 
 A gaming platform with a store, library, friends list, and party sessions.
 
-Captain Claw works like a normal gaming site on its own. It also exposes 13
+Captain Claw works like a normal gaming site on its own. It also exposes 14
 WebMCP tools that let an agent work with the same product: check libraries,
 use the current Store view, create parties, and send invitations.
 
@@ -39,7 +39,7 @@ chat.
 A normal gaming assistant could expose a server API and stop there. Captain
 Claw needs browser context too.
 
-Four of the 13 tools specifically depend on what the player is doing in the
+Five of the 14 tools specifically depend on what the player is doing in the
 browser.
 
 **`get_current_view` reads the page the player is currently on.** It can see
@@ -50,15 +50,34 @@ For example, the player can filter the Store first and then ask the agent,
 "Do any of these work for tonight?" The agent can use the actual Store view
 instead of guessing.
 
-**`apply_filters` and `open_game` can change that same view.** When the agent
-finds a shortlist, it can apply the filters or open the game on the page the
-player is already using.
+**`apply_filters`, `show_games` and `open_game` change that same view.** They
+are the difference between an agent that answers in chat and one that leaves
+the player looking at the answer. `apply_filters` is for when the answer *is*
+a filter — a genre, a player count, a session budget. `show_games` is for when
+it isn't: "these three, because all four of you own them and they fit the
+evening" is the product of reasoning across several tools, and no combination
+of filters selects exactly those three. It pins the list by id instead.
 
-**The available tools also change with the page and state.** `apply_filters`
-is only available on Store and Library pages. `get_current_view` and
-`open_game` are also available on game pages. `respond_to_invite` only
-appears when the signed-in player actually has a pending invitation, in that
-player's own session.
+**The view tools register on every page.** If the player is somewhere with no
+filter bar — Home, Friends, a game page — `apply_filters` and `show_games`
+move them to the Store rather than being absent from the tool list.
+
+That was originally the other way around: the view tools were gated to the
+pages that could render them, which read as tidy and behaved badly. A player
+who opened the site normally landed on Home, where the tool list contained
+nothing that could change the screen, so an agent asked to find a game could
+only reach `search_games` — it answered perfectly in chat and left the page
+untouched. Route-gating is also fragile against agent hosts that snapshot the
+tool list at the start of a turn: a tool that appears only after the player
+navigates may not be visible until the next turn, or at all. Registering
+everywhere and navigating on demand keeps the capability constant and moves
+the routing decision inside the tool, where it can be handled instead of
+merely prevented. [`verify-agent-drives-ui.mjs`](./scripts/verify-agent-drives-ui.mjs)
+starts on Home specifically to keep that regression from coming back.
+
+**Tool availability still changes with state where state is the point.**
+`respond_to_invite` only appears when the signed-in player actually has a
+pending invitation, in that player's own session.
 
 That means the agent discovers capabilities from the current state of the
 product instead of getting one large list of unrelated tools.
@@ -90,8 +109,7 @@ The tools are grouped by scope:
 | File | Registered | Tools |
 |---|---|---|
 | [`readTools.tsx`](./src/webmcp/readTools.tsx) | everywhere | `get_online_friends`, `get_my_library`, `get_friend_libraries`, `search_games`, `get_game_details` |
-| [`viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store, Library, game pages | `get_current_view`, `open_game` |
-| [`viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store and Library only | `apply_filters` |
+| [`viewTools.tsx`](./src/webmcp/viewTools.tsx) | everywhere | `get_current_view`, `apply_filters`, `show_games`, `open_game` |
 | [`partyTools.tsx`](./src/webmcp/partyTools.tsx) | everywhere | `create_party`, `invite_friends`, `get_party_status`, `launch_session` |
 | [`partyTools.tsx`](./src/webmcp/partyTools.tsx) | only while an invite is pending | `respond_to_invite` |
 
@@ -116,7 +134,7 @@ tools that change state.
 `get_party_status` can return `no active party` instead of failing opaquely.
 The agent can then recover by creating a party.
 
-### The 13 tools
+### The 14 tools
 
 <details>
 <summary>Full reference: names, inputs, behaviour</summary>
@@ -129,11 +147,12 @@ The agent can then recover by creating a party.
 - `search_games({ query?, genres?, minPlayers?, coop?, maxSessionMinutes? })` — catalog search on hard constraints. `query` matches title and genre. `maxSessionMinutes` is a budget, not a floor (see below).
 - `get_game_details({ gameIds })` — full detail per game, including which friends own it.
 
-**Page context (only where the player can act on them)**
+**View (global — they read and drive the player's screen)**
 
-- `get_current_view()` — Store, Library, game pages. On a list page: the page, the hand-set filters, and what's on screen. On a game page: the game in focus. The payload is shaped per page rather than as one union of every field.
-- `open_game({ gameId })` — Store, Library, game pages. Navigates the player's screen.
-- `apply_filters({ query?, genres?, minPlayers?, coop?, maxSessionMinutes?, onlyUnfinished?, onlyUnplayed?, onlyInstalled?, clear? })` — Store and Library only. Sets the filters on the page the player is looking at.
+- `get_current_view()` — on a list page: the page, the hand-set filters, and what's on screen. On a game page: the game in focus. On Home: the cards it renders, each game once, even though two grids overlap. On Friends and Party: an empty list plus a note saying where the games are. The payload is shaped per page rather than as one union of every field.
+- `open_game({ gameId })` — navigates the player's screen to a game page. Unknown ids come back as a structured error naming `search_games` as the fix, rather than a silent no-op.
+- `apply_filters({ query?, genres?, minPlayers?, coop?, maxSessionMinutes?, onlyUnfinished?, onlyUnplayed?, onlyInstalled?, clear? })` — sets the filters on the player's screen, moving them to the Store first if they are on a page without a filter bar. `clear` is the exception that never navigates: there is nothing to clear on a page with no filters, and yanking the player to the Store to prove it would be worse than saying so.
+- `show_games({ gameIds })` — pins an exact set of games to the screen, for a shortlist that no filter expresses. Pinned onto *cleared* filters, so a genre the player left selected can't silently hide part of the shortlist. The player gets a banner naming the count with a "Show everything" escape, because the genre pills and selects have no way to represent a pin, and a catalog that has quietly shrunk to three games is otherwise unexplainable. Ids that don't exist fail loudly instead of pinning an empty screen.
 
 **Party (global)**
 
@@ -284,8 +303,9 @@ regressions slip past a manual pass.
 | `npm run test:ui` | UI smoke tests at 1280px. |
 | `npm run test:mobile` | Store and Home at 390px. |
 | `npm run test:party` | Two browser sessions exchange a real invitation through the backend. |
-| `npm run test:webmcp` | Checks all 13 tools, registration, state changes, errors, and late WebMCP injection. |
+| `npm run test:webmcp` | Checks all 14 tools, registration, state changes, errors, and late WebMCP injection. |
 | `npm run test:view` | Verifies WebMCP page context matches the rendered UI. |
+| `npm run test:drives-ui` | Starts on Home and checks the agent can actually change the screen from any page. |
 | `npm run test:evals` | Runs the [WebMCP evals](./evals/webmcp-evals.json) in real Chrome. |
 
 Neither page in `test:party` installs a WebMCP shim, so it doubles as the

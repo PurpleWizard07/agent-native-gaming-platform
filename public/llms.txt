@@ -1,18 +1,24 @@
 # Captain Claw
 
 > A fictional gaming platform — store, library, friends and party sessions —
-> built for the WebMCP Challenge. It registers 13 WebMCP tools on
+> built for the WebMCP Challenge. It registers 14 WebMCP tools on
 > `document.modelContext`, so a browser agent can read what the player is
-> currently looking at, search the catalog, create a party and send
-> invitations. Users, libraries and game data are synthetic. No real game is
-> launched.
+> currently looking at, change what is on their screen, search the catalog,
+> create a party and send invitations. Users, libraries and game data are
+> synthetic. No real game is launched.
 
 Captain Claw is agent-operable at runtime, not merely agent-readable. In a
 WebMCP-capable browser, prefer the registered tools over reading the DOM: they
-return structured JSON, they act on the same state the player sees, and the set
-of available tools changes with the current page and session. Tools that only
-read are annotated `readOnlyHint`. Everything an agent can do here is also
-possible through the normal UI.
+return structured JSON and they act on the same state the player sees. Tools
+that only read are annotated `readOnlyHint`. Everything an agent can do here is
+also possible through the normal UI.
+
+Searching is not the same as showing. `search_games` and the library tools only
+read — they leave the player's screen exactly as it was. Once you have decided
+what to recommend, call `show_games` with those ids (or `apply_filters` when
+your answer really is a filter) so the player ends up looking at the games you
+are describing. Both work from any page and will move the player to the Store
+if they are somewhere without a filter bar.
 
 ## Pages
 
@@ -25,7 +31,7 @@ possible through the normal UI.
 ## WebMCP tools
 
 - [Read tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/readTools.tsx): `get_online_friends`, `get_my_library`, `get_friend_libraries`, `search_games`, `get_game_details`. Registered on every page.
-- [View tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/viewTools.tsx): `get_current_view` and `open_game` on Store, Library and game pages; `apply_filters` on Store and Library only.
+- [View tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/viewTools.tsx): `get_current_view`, `apply_filters`, `show_games` and `open_game`. Registered on every page; the two that need a filter bar navigate to the Store when the player is not on one.
 - [Party tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/partyTools.tsx): `create_party`, `invite_friends`, `get_party_status`, `launch_session`. `respond_to_invite` is registered only while the signed-in player has an invitation pending.
 - [Registration hook](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/useTool.ts): how tools are registered, torn down with `AbortController`, and how errors are returned as structured data rather than opaque failures.
 

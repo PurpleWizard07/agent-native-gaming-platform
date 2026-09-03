@@ -113,7 +113,7 @@ export function ReadTools() {
   useTool<SearchGamesInput>({
     name: "search_games",
     description:
-      "Search and filter the catalog by text, genre, supported player count, co-op support and typical session length. Prefer this over reading the page when you need games matching hard constraints like 'supports 4' or 'under 75 minutes'. Does not know who owns what — intersect with the library tools.",
+      "Search and filter the catalog by text, genre, supported player count, co-op support and typical session length. Prefer this over reading the page when you need games matching hard constraints like 'supports 4' or 'under 75 minutes'. Does not know who owns what — intersect with the library tools. This only reads the catalog and does NOT change what the player sees: once you have picked what to recommend, call show_games with those ids so the player is looking at the games you are describing.",
     inputSchema: {
       type: "object",
       properties: {

@@ -34,11 +34,13 @@ function isFiltered(filters: Filters): boolean {
       filters.maxSessionMinutes ||
       filters.onlyUnfinished ||
       filters.onlyInstalled ||
-      filters.onlyUnplayed,
+      filters.onlyUnplayed ||
+      filters.gameIds?.length,
   );
 }
 
 export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterBarProps) {
+  const pinnedCount = filters.gameIds?.length ?? 0;
   const toggleGenre = (genre: string) => {
     onChange((prev) => ({
       ...prev,
@@ -48,6 +50,27 @@ export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterB
 
   return (
     <div className="space-y-3 border-b border-ink-800 pb-4">
+      {/* A pinned shortlist has no control of its own to un-set — the genre
+          pills and selects can't represent it — so it needs its own banner.
+          Without this the player just sees a catalog that has mysteriously
+          shrunk to three games. */}
+      {pinnedCount > 0 && (
+        <div
+          data-testid="pinned-banner"
+          className="flex flex-wrap items-center gap-2 rounded-md border border-accent-500/40 bg-accent-500/10 px-3 py-2 text-xs text-neutral-200"
+        >
+          <span className="font-medium text-accent-300">
+            Showing {pinnedCount} {pinnedCount === 1 ? "game" : "games"} picked for you
+          </span>
+          <button
+            onClick={() => onChange((prev) => ({ ...prev, gameIds: undefined }))}
+            className="ml-auto underline hover:text-neutral-100"
+          >
+            Show everything
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         {/* The human's equivalent of search_games' `query` — without it the
             agent could text-search a catalog the player could only click
