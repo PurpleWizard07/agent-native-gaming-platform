@@ -9,22 +9,22 @@ export interface User {
   playingGameId?: string;
 }
 
-export const SIGNED_IN_USER_ID = "purple";
+export const SIGNED_IN_USER_ID = "alex";
 
 export const USERS: User[] = [
-  { id: "purple", name: "Purple", avatar: "#a855f7", presence: "online" },
-  { id: "alex", name: "Alex", avatar: "#f97316", presence: "online", playingGameId: "ridge-runners" },
-  { id: "sam", name: "Sam", avatar: "#22c55e", presence: "online" },
-  { id: "maya", name: "Maya", avatar: "#0ea5e9", presence: "online" },
-  { id: "chris", name: "Chris", avatar: "#64748b", presence: "offline" },
+  { id: "alex", name: "Alex", avatar: "#a855f7", presence: "online" },
+  { id: "justin", name: "Justin", avatar: "#f97316", presence: "online", playingGameId: "ridge-runners" },
+  { id: "robert", name: "Robert", avatar: "#22c55e", presence: "online" },
+  { id: "sarah", name: "Sarah", avatar: "#0ea5e9", presence: "online" },
+  { id: "andrew", name: "Andrew", avatar: "#64748b", presence: "offline" },
 ];
 
 export const USER_BY_ID: Record<string, User> = Object.fromEntries(USERS.map((u) => [u.id, u]));
 
 export const FRIENDSHIPS: Record<string, string[]> = {
-  purple: ["alex", "sam", "maya", "chris"],
-  alex: ["purple", "sam", "maya"],
-  sam: ["purple", "alex", "maya"],
-  maya: ["purple", "alex", "sam"],
-  chris: ["purple"],
+  alex: ["justin", "robert", "sarah", "andrew"],
+  justin: ["alex", "robert", "sarah"],
+  robert: ["alex", "justin", "sarah"],
+  sarah: ["alex", "justin", "robert"],
+  andrew: ["alex"],
 };

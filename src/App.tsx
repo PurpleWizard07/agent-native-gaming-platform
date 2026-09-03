@@ -24,7 +24,7 @@ function App() {
             <ReadTools />
             <ViewTools />
             <PartyTools />
-            <div className="min-h-screen bg-neutral-950 text-neutral-100">
+            <div className="min-h-screen bg-ink-950 text-neutral-100">
               <Nav />
               <main className="mx-auto max-w-6xl px-4 py-6">
                 <Routes>

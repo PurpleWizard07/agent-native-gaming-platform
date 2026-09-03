@@ -1,267 +1,293 @@
-# Nightfall Arcade
+# Captain Claw
 
-**Live:** https://agent-native-gaming-platform.netlify.app
+**Live:** https://captainclaw.netlify.app
 
-A gaming platform — store, library, friends, parties — designed for both
-humans and agents. Players can describe the gaming experience they want, and
-a WebMCP-enabled agent can operate the platform to turn that intent into a
-playable session. The site is a fully working product on its own; WebMCP adds
-a second mode of interaction on top of it, not a replacement for the first.
+A gaming platform with a store, library, friends list, and party sessions.
 
-> This is a fictional gaming platform inspired by familiar digital game-store
-> and social-gaming workflows. All users, libraries and friend data are
-> synthetic; no real game is launched. The project demonstrates how such a
-> platform can be made agent-operable through WebMCP.
+Captain Claw works like a normal gaming site on its own. It also exposes 13
+WebMCP tools that let an agent work with the same product: check libraries,
+use the current Store view, create parties, and send invitations.
 
-Built for the WebMCP Challenge hackathon.
+The agent handles the coordination. You still decide what to play and press
+Launch.
+
+> A fictional platform built for the WebMCP Challenge hackathon. Users,
+> libraries, friends, and game data are synthetic. No real game is launched.
 
 ---
 
-## Why this is a strong fit for WebMCP
+## The problem it actually solves
 
-Almost every "AI gaming assistant" demo is a recommendation engine wearing a
-chat window. This project's thesis is different: **the agent and the player
-operate the same screen.** The agent handles the coordination — who's online,
-who owns what, what fits tonight, who's invited — and the player keeps the
-one moment that matters: pressing Launch.
+Four friends want to play for about an hour.
 
-Four of the thirteen tools exist specifically because they live *in the page*,
-not on a server — a plain remote MCP endpoint could never do this:
+You need to check who's online, see what everyone owns, find games that
+support the right number of players, remember what people have already
+played, pick a game, create a party, invite everyone, and wait for replies.
 
-1. **`get_current_view`** reads what the player is actually looking at —
-   the page, the filters they set by hand, the games currently on screen.
-   A player can filter the Store themselves, then ask *"do any of these work
-   for tonight?"* — no server-side agent has access to that state.
-2. **`apply_filters`** and **`open_game`** drive the player's own screen, so
-   the shortlist the agent reasoned about becomes visible instead of staying
-   as chat text.
-3. **The registered tool set changes with the player's context.** Open
-   DevTools' WebMCP panel on Home and the page-context tools are gone.
-   `apply_filters` appears only where there are filters to set (Store,
-   Library); `get_current_view` and `open_game` also appear on a game page,
-   where "this game" has an answer. Nine tools on Home, twelve on the Store.
-4. **`respond_to_invite`** is registered only while an invitation is actually
-   pending, and only in the *invited* player's session — so Alex's agent can
-   answer on Alex's behalf. Its mere presence tells an agent there is
-   something to respond to, and it makes the flow agent-to-agent coordination
-   through a shared platform rather than one agent driving one screen.
+None of these steps is especially difficult. The problem is that the answer
+depends on several people's state at the same time.
 
-## How it creates a better experience
+With Captain Claw, the player can describe the whole request in one message.
+The agent finds a match and can then create the party and send the
+invitations.
 
-Coordinating a group session today means: check who's online, check what
-everyone owns, cross-reference player counts and session length, remember
-who's already finished what, pick one, create a party, invite everyone, wait,
-start. That's ten manual steps across four browser tabs and a group chat. One
-sentence to the agent collapses that into a recommendation with a visible
-reason — and the platform's own state (party, invites, "who's ready") changes
-in response, not just a text answer.
+This changes the actual platform state. It is not just a recommendation in
+chat.
 
-## What's newly possible together
+## Why this needs WebMCP and not a remote MCP server
 
-Before this, a player either browsed alone or asked a chatbot for
-suggestions it couldn't act on. Here, a player can filter the Store by hand
-and hand the *result* to the agent to reason over; the agent can create a
-real party and send real invitations that land in a friend's own browser
-session; and the platform is honest about failure — when no game satisfies
-every constraint, the agent says so and names the closest option instead of
-faking a perfect match. None of that is possible from a page an agent can
-only search.
+A normal gaming assistant could expose a server API and stop there. Captain
+Claw needs browser context too.
 
-## How WebMCP is implemented
+Four of the 13 tools specifically depend on what the player is doing in the
+browser.
 
-Every tool is registered with `document.modelContext.registerTool` through a
-small hook ([`src/webmcp/useTool.ts`](./src/webmcp/useTool.ts)) that handles
-registration/cleanup via `AbortController` and wraps each tool's return value
-in the MCP content-array shape. Tools are grouped into three files by scope:
+**`get_current_view` reads the page the player is currently on.** It can see
+which page is open, which filters the player selected, and which games are
+visible.
 
-| File | Scope | Tools |
+For example, the player can filter the Store first and then ask the agent,
+"Do any of these work for tonight?" The agent can use the actual Store view
+instead of guessing.
+
+**`apply_filters` and `open_game` can change that same view.** When the agent
+finds a shortlist, it can apply the filters or open the game on the page the
+player is already using.
+
+**The available tools also change with the page and state.** `apply_filters`
+is only available on Store and Library pages. `get_current_view` and
+`open_game` are also available on game pages. `respond_to_invite` only
+appears when the signed-in player actually has a pending invitation, in that
+player's own session.
+
+That means the agent discovers capabilities from the current state of the
+product instead of getting one large list of unrelated tools.
+
+## What you can do here that you couldn't before
+
+The useful difference is that the agent can work with live product state, not
+just return recommendations.
+
+A player can give the agent a manually filtered Store and ask it to evaluate
+those games. The agent can create a real party and send invitations to other
+users' sessions. When no game matches every constraint, it can explain the
+closest match and what prevented it from fitting.
+
+The agent is also taking actions, so being vague is much less useful. A wrong
+recommendation here can create a party and send three invitations.
+
+## How the WebMCP layer is built
+
+The WebMCP integration is kept in one small hook,
+[`src/webmcp/useTool.ts`](./src/webmcp/useTool.ts).
+
+Each tool is registered with `document.modelContext.registerTool`. The hook
+handles registration, cleanup with `AbortController`, and the standard MCP
+content-array response shape.
+
+The tools are grouped by scope:
+
+| File | Registered | Tools |
 |---|---|---|
-| [`src/webmcp/readTools.tsx`](./src/webmcp/readTools.tsx) | Global | `get_online_friends`, `get_my_library`, `get_friend_libraries`, `search_games`, `get_game_details` |
-| [`src/webmcp/viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store, Library & game pages | `get_current_view`, `open_game` |
-| [`src/webmcp/viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store & Library only | `apply_filters` |
-| [`src/webmcp/partyTools.tsx`](./src/webmcp/partyTools.tsx) | Global | `create_party`, `invite_friends`, `get_party_status`, `launch_session` |
-| [`src/webmcp/partyTools.tsx`](./src/webmcp/partyTools.tsx) | Only while an invite is pending | `respond_to_invite` |
+| [`readTools.tsx`](./src/webmcp/readTools.tsx) | everywhere | `get_online_friends`, `get_my_library`, `get_friend_libraries`, `search_games`, `get_game_details` |
+| [`viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store, Library, game pages | `get_current_view`, `open_game` |
+| [`viewTools.tsx`](./src/webmcp/viewTools.tsx) | Store and Library only | `apply_filters` |
+| [`partyTools.tsx`](./src/webmcp/partyTools.tsx) | everywhere | `create_party`, `invite_friends`, `get_party_status`, `launch_session` |
+| [`partyTools.tsx`](./src/webmcp/partyTools.tsx) | only while an invite is pending | `respond_to_invite` |
 
-Party tools call the exact same `PartyContext` methods the Party page's own
-buttons use — the agent and the human are always driving one real, shared
-state, never two parallel code paths. `search_games` and `apply_filters` both
-resolve through the same [`filterGames`](./src/lib/filterGames.ts) function
-the Store/Library pages render from, so an agent's answer and what the player
-sees on screen can never silently disagree.
+The tools use the same functions as the normal UI. Party tools call the same
+`PartyContext` methods used by the Party page, and search/filtering use the
+same [`filterGames`](./src/lib/filterGames.ts) function as the Store and
+Library.
 
-Three smaller details that matter in practice:
+There is no separate agent-only implementation of the product.
 
-- **Every tool the agent can reach, the player can reach too.** The Store and
-  Library have a search box because `search_games` takes a `query`, and a
-  "Never started" toggle because `get_my_library` takes `onlyUnplayed`. Where
-  the two sets diverged, the UI was the half that was missing.
-- **Read tools declare `annotations: { readOnlyHint: true }`**, so a host can
-  auto-approve the seven that only look and prompt for the six that change
-  something. Without it, "check who's online" and "launch the session" look
-  identical to an agent host.
-- **Tool failures come back as data.** `useTool` catches throws and returns
-  `{ error: "no active party" }` with `isError: true`; an agent that reads
-  that recovers by calling `create_party`, where an opaque host-level failure
-  just stops it. `launch_session` goes further and names who it is waiting on.
+### A few important implementation choices
+
+**The agent uses the same capabilities as the UI.** Anything the agent can do
+is also possible through the normal product. The Store has search and
+filters, and the Library has the same states exposed through the tools.
+
+**Read-only tools are marked as read-only.** The seven read tools use
+`annotations: { readOnlyHint: true }`, so a host can distinguish them from
+tools that change state.
+
+**Tool failures are returned as structured data.** For example,
+`get_party_status` can return `no active party` instead of failing opaquely.
+The agent can then recover by creating a party.
 
 ### The 13 tools
 
 <details>
-<summary>Full tool reference (names, descriptions, inputs)</summary>
+<summary>Full reference: names, inputs, behaviour</summary>
 
-**Read — registered globally**
+**Read (global)**
 
 - `get_online_friends()` — friends with presence and what each is playing right now.
-- `get_my_library({ onlyUnfinished?, onlyUnplayed?, onlyInstalled? })` — the signed-in player's owned games with playtime/completion/install state. `onlyUnfinished` includes games in progress; `onlyUnplayed` is strictly "never started".
-- `get_friend_libraries({ friendIds })` — ownership + completion for named friends.
-- `search_games({ query?, genres?, minPlayers?, coop?, maxSessionMinutes? })` — catalog search by hard constraints. `query` matches title and genre; `maxSessionMinutes` is a *budget*, not a floor (see below).
+- `get_my_library({ onlyUnfinished?, onlyUnplayed?, onlyInstalled? })` — owned games with playtime, completion and install state. `onlyUnfinished` includes games in progress; `onlyUnplayed` is strictly "never started".
+- `get_friend_libraries({ friendIds })` — ownership and completion for named friends.
+- `search_games({ query?, genres?, minPlayers?, coop?, maxSessionMinutes? })` — catalog search on hard constraints. `query` matches title and genre. `maxSessionMinutes` is a budget, not a floor (see below).
 - `get_game_details({ gameIds })` — full detail per game, including which friends own it.
 
-**Page context — registered only where the player can act on them**
+**Page context (only where the player can act on them)**
 
-- `get_current_view()` — *Store, Library, game pages.* On a list page: the page, the hand-set filters, and the games visible on screen right now. On a game page: the game in focus. The payload is shaped per page rather than one union of every field, so a game page can't report the stale list from the page before it.
-- `open_game({ gameId })` — *Store, Library, game pages.* Navigates the player's screen to a game's page.
-- `apply_filters({ query?, genres?, minPlayers?, coop?, maxSessionMinutes?, onlyUnfinished?, onlyUnplayed?, onlyInstalled?, clear? })` — *Store and Library only.* Sets the filters on the page the player is looking at.
+- `get_current_view()` — Store, Library, game pages. On a list page: the page, the hand-set filters, and what's on screen. On a game page: the game in focus. The payload is shaped per page rather than as one union of every field.
+- `open_game({ gameId })` — Store, Library, game pages. Navigates the player's screen.
+- `apply_filters({ query?, genres?, minPlayers?, coop?, maxSessionMinutes?, onlyUnfinished?, onlyUnplayed?, onlyInstalled?, clear? })` — Store and Library only. Sets the filters on the page the player is looking at.
 
-**Party — registered globally**
+**Party (global)**
 
 - `create_party({ gameId })` — starts a session with the signed-in player as host.
-- `invite_friends({ friendIds })` — invites friends; the invite appears in their own browser session. Re-inviting someone who declined resets them to invited.
-- `get_party_status()` — current party, member states, and whether it's ready to launch.
-- `launch_session()` — starts the session once every invited member has **responded**; anyone who declined is left behind rather than blocking the launch. Returns `{ status: "not_ready", waitingOn: [...] }` naming who hasn't answered.
+- `invite_friends({ friendIds })` — invites land in the recipients' own sessions. Re-inviting someone who declined resets them to invited.
+- `get_party_status()` — party, member states, whether it's ready.
+- `launch_session()` — launches once every invited member has *responded*. Decliners get left behind rather than blocking it forever. Returns `{ status: "not_ready", waitingOn: [...] }` otherwise.
 
-**Party — registered only while an invitation is pending**
+**Party responses (only while an invite is pending)**
 
-- `respond_to_invite({ accept? })` — accepts or declines the invitation waiting for the signed-in player. Present only when there is something to respond to.
+- `respond_to_invite({ accept? })` — accept or decline the invitation waiting for the signed-in player.
 
 </details>
 
-### What "fits about 75 minutes" means
+### What "about 75 minutes" means
 
-`maxSessionMinutes` is a session *budget*. A game fits when its shortest
-session is within the budget **and** its longest overruns it by no more than
-30% — so a 45-70 min game fits a 60-minute evening and a 60-120 min game does
-not, even though it *can* be played in 60. That single rule
-([`SESSION_OVERRUN_FACTOR`](./src/lib/filterGames.ts)) is imported by the
-Store/Library filters, `search_games`, `apply_filters` and
-`npm run check-funnel` alike, so the product and the dataset check cannot
-drift apart on it. The UI labels its presets "About 30 min", "About 60 min"
-for the same reason — "Under 60 min" would be a claim the filter does not
-make.
+`maxSessionMinutes` is treated as a time budget, not a hard cutoff.
+
+A game fits when its shortest session is within the budget and its longest
+session does not exceed the budget by more than 30%.
+
+That rule lives in `SESSION_OVERRUN_FACTOR` in
+[`filterGames.ts`](./src/lib/filterGames.ts), and the UI and WebMCP tools use
+the same rule.
+
+That's why the UI says "About 60 min" instead of "Under 60 min."
 
 ---
 
-## Try it yourself
+## Try it
 
-Open the [live site](https://agent-native-gaming-platform.netlify.app) in
-ChatGPT's in-app browser, or in Chrome with
-`chrome://flags/#enable-webmcp-testing` enabled, and try:
+Open the [live site](https://captainclaw.netlify.app) in ChatGPT's in-app
+browser, or use Chrome with `chrome://flags/#enable-webmcp-testing` enabled.
 
-- *"Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op
-  game all four of us can play — preferably something none of us has finished,
-  and nothing scary."* — the hero flow. Answer: **Nightfall Signal**, with
-  **Ridge Runners** as the honest near-miss (Sam's already finished it).
-- *"Let's play."* — the agent creates the party and invites everyone.
+Try:
+
+> *"Justin, Robert and Sarah are online. We've got about 75 minutes. Find a
+> co-op game all four of us can play, preferably something none of us has
+> finished, and nothing scary."*
+
+The expected answer is **Nightfall Signal**, with **Ridge Runners** as the
+near-miss because Robert has already finished it.
+
+Then say **"Let's play."** The agent creates the party and sends the
+invitations.
+
+Other examples:
+
 - *"Find me something solo under 30 minutes."*
 - *"What's in my library I've never started?"*
-- *"Alex is playing something right now — would that work for all four of us?"*
+- *"Justin is playing something right now. Would that work for all four of
+  us?"*
 
-Every clause of that hero prompt does real work, and `npm run check-funnel`
-prints the funnel one clause at a time to prove it. That includes *"nothing
-scary"*: without it, **Hollow Choir** and **Fathom Line** satisfy the request
-just as well as Nightfall Signal, and an agent naming either would be right.
-An earlier version of the prompt left the preference out while the dataset
-check quietly applied it anyway — so the demo claimed a unique answer it had
-not actually earned.
+Every clause in the hero prompt is doing work, and `npm run check-funnel`
+prints the funnel one clause at a time. Drop "nothing scary" and **Hollow
+Choir** and **Fathom Line** satisfy the request just as well. An earlier
+version of the check excluded horror games in code even when the prompt did
+not mention it; it now evaluates the prompt as written.
 
-### Seeing the real invite flow
+### Watching a real invite land
 
-Invites are not simulated — they go through a real backend
-([`netlify/functions/party.ts`](./netlify/functions/party.ts), backed by
-Netlify Blobs) and land in the recipient's own browser session. To see it:
+Invitations are stored in the backend
+([`netlify/functions/party.ts`](./netlify/functions/party.ts) backed by
+Netlify Blobs) and appear in the recipient's own session.
 
-1. Open the site in one window, play as **Purple** (the default), and start a
-   party from any game page.
-2. Open a **second window**, switch **View as** to **Alex**, and go to
-   **Party**. The invite is there for real, not on a timer.
-3. Accept as Alex; watch Purple's window pick it up within ~2 seconds via
-   polling, with no manual refresh.
+1. Open the site, stay as **Alex** (the default), start a party from any
+   game page.
+2. Open a **second window**, switch **View as** to **Justin**, then go to
+   **Party**. The invite is sitting there.
+3. Accept as Justin. Alex's window picks it up through polling. No refresh is
+   needed.
 
-A second window in the same browser joins automatically. For an **incognito
-window or a different browser**, use the **Copy** button under "Second player"
-on the Party page and open that link — it carries the room id.
+A second window in the same browser joins automatically. For incognito or a
+different browser, use the **Copy** button under "Second player" on the Party
+page: that link carries the room id. There's a **Reset demo** link at the
+bottom of the Party page.
 
-A **Reset demo** link at the bottom of the Party page clears the state for
-your room.
+### One party per room
 
-### Parties are namespaced per room
+Each visitor gets an independent party room.
 
-Each visitor gets their own party. The room id comes from `?room=` in the URL
-if present, then `localStorage`, then a fresh random id, and is written back
-into the address bar so the URL is a shareable invite link. Without this the
-service held exactly one global party, so two people trying the live site at
-the same time silently clobbered each other's session — the failure mode most
-likely to hit a demo that several people open at once.
+The room id comes from `?room=`, then `localStorage`, then a new random id.
+It is written back to the URL so the URL can also be used as a shareable
+invite.
+
+This prevents two demo users from accidentally overwriting each other's party
+state.
 
 ---
 
 ## Architecture
 
-- **Vite + React + TypeScript**, Tailwind v4, `react-router-dom`.
-- All game/user/library data is static, bundled TypeScript (`src/data/`) —
-  deterministic, no external APIs, no auth, no flake. Seed data is
-  purpose-built so the hero query resolves to exactly one clean answer plus
-  one legible near-miss; `npm run check-funnel` re-verifies this, printing the
-  funnel one prompt clause at a time.
-- Generated library entries are internally consistent: a null `lastPlayedAt`
-  means never launched, so playtime is 0 and `completed` is false. Generating
-  those fields independently produced entries claiming 300 minutes played on a
-  game that had never been started — and made *"what have I never started?"*
-  a question with no possible answer.
-- The only mutable, shared state is the current party, held in **Netlify
-  Blobs** behind one Netlify Function (`/api/party`), namespaced per room —
-  no database.
-- **Agent actions announce themselves.** When the agent applies filters or
-  assembles a party, the page changes the way a page changes, but it also
-  raises a short toast. In a narrow viewport — ChatGPT's in-app browser — a
-  quiet state change three sections down is easy to miss, and a player who
-  cannot see what the agent did cannot supervise it.
-- Game covers are procedurally generated (a per-game gradient + typography,
-  [`src/components/GameCover.tsx`](./src/components/GameCover.tsx)) — no
-  copied or licensed storefront artwork.
+Vite, React, TypeScript, Tailwind v4, `react-router-dom`.
+
+Game, user and library data is static bundled TypeScript in `src/data/`.
+There are no external APIs or authentication dependencies, which keeps the
+demo self-contained. The seed data is built so the hero query lands on
+exactly one clean answer plus one legible near-miss, and `npm run
+check-funnel` re-verifies that.
+
+The generated library data is also internally consistent. For example, a game
+with no `lastPlayedAt` has zero playtime and is not marked complete. This
+matters because otherwise simple queries such as *"what have I never
+started?"* can produce contradictory results.
+
+The only mutable shared state is the current party, held in Netlify Blobs
+behind a single function at `/api/party`, namespaced per room. No database.
+
+### Making agent actions visible
+
+When the agent changes filters or creates a party, the page updates normally
+and also shows a short toast.
+
+This matters especially in ChatGPT's in-app browser, where a state change
+lower on the page can be easy to miss. The player should be able to see what
+the agent just did.
+
+Game covers are procedurally generated from a per-game gradient and
+typography ([`GameCover.tsx`](./src/components/GameCover.tsx)). No borrowed
+storefront art.
 
 ## Running locally
 
 ```bash
 npm install
-npx playwright install chromium   # only needed for the verification scripts below
-netlify dev                       # serves the site AND the /api/party function together
+npx playwright install chromium   # only for the verification scripts
+netlify dev                       # serves the site and /api/party together
 ```
 
-`npm run dev` (plain Vite) also works for UI-only work, but the party service
-and the tool layer need `netlify dev` since they depend on `/api/party`.
+`npm run dev` works for UI-only development, but use `netlify dev` for the
+full app because the party API and WebMCP flow depend on `/api/party`.
 
 ## Verification
 
-This project leans on scripted browser verification rather than manual
-click-through, since a hackathon deadline is exactly when regressions slip
-in:
+Scripted rather than click-through, because a deadline is exactly when
+regressions slip past a manual pass.
 
-| Command | What it checks |
+| Command | Purpose |
 |---|---|
-| `npm run check-funnel` | The hero-query dataset resolves to exactly one answer + one near-miss (pure data, no browser) |
-| `npm run test:ui` | Every page renders without console errors at 1280px |
-| `npm run test:mobile` | Store and Home render without console errors at 390px |
-| `npm run test:party` | Two independent browser sessions (Purple + Alex) exchange a real invite through the live backend; a third in another room sees none of it. Neither page installs a WebMCP shim, so this is also the check that an ordinary browser with no agent stays error-free |
-| `npm run test:webmcp` | All 13 tools' registration and `execute()` logic via a shimmed `document.modelContext` — per-page and per-state registration, read-only annotations, structured errors, and registration after a **late-injected** `document.modelContext` |
-| `npm run test:view` | `get_current_view` matches the rendered DOM on a fresh page load, after a hand-set filter, and across navigation — the hero demo's first beat |
-| `npm run test:evals` | [`evals/webmcp-evals.json`](./evals/webmcp-evals.json) run with [`webmcp-evals smoke`](https://github.com/GoogleChromeLabs/webmcp-tools/tree/main/webmcp-evals) against **real Chrome** — no shim, no LLM/API key needed |
+| `npm run check-funnel` | Verifies the hero scenario against the dataset. Pure data, no browser. |
+| `npm run test:ui` | UI smoke tests at 1280px. |
+| `npm run test:mobile` | Store and Home at 390px. |
+| `npm run test:party` | Two browser sessions exchange a real invitation through the backend. |
+| `npm run test:webmcp` | Checks all 13 tools, registration, state changes, errors, and late WebMCP injection. |
+| `npm run test:view` | Verifies WebMCP page context matches the rendered UI. |
+| `npm run test:evals` | Runs the [WebMCP evals](./evals/webmcp-evals.json) in real Chrome. |
 
-`test:party`, `test:webmcp`, and `test:evals` need `netlify dev` running in
-another terminal first (`test:evals` targets `http://localhost:8888/store`
-by default — edit the script in `package.json` to point at the live URL
-instead).
+Neither page in `test:party` installs a WebMCP shim, so it doubles as the
+check that a plain browser with no agent stays error-free.
+
+`test:party`, `test:webmcp` and `test:evals` need `netlify dev` running in
+another terminal. `test:evals` points at `http://localhost:8888/store` by
+default; edit the script in `package.json` to aim it at the live URL.
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE).

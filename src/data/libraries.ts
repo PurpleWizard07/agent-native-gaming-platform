@@ -12,84 +12,84 @@ export interface LibraryEntry {
 
 /**
  * Which of the five users own each game. Handcrafted so the hero query
- * ("Alex, Sam, Maya online, ~75 min, co-op, nothing anyone's finished")
+ * ("Justin, Robert, Sarah online, ~75 min, co-op, nothing anyone's finished")
  * resolves to exactly one clean answer (Nightfall Signal) plus one legible
- * near-miss (Ridge Runners, which fails only because Sam has finished it) —
+ * near-miss (Ridge Runners, which fails only because Robert has finished it) —
  * see scripts/check-funnel.ts, which asserts this holds.
  */
 const OWNERSHIP: Record<string, string[]> = {
-  "nightfall-signal": ["purple", "alex", "sam", "maya"],
-  "ridge-runners": ["purple", "alex", "sam", "maya"],
-  "hollow-choir": ["purple", "alex", "sam", "maya"],
-  "copper-and-steam": ["purple", "alex", "sam", "maya"],
-  "longmarch-chronicles": ["purple", "alex", "sam", "maya"],
-  "static-harbor": ["purple", "alex", "sam", "maya"],
-  "tin-can-regatta": ["purple", "alex", "sam", "maya"],
-  "emberfall-keep": ["purple", "alex", "maya"],
-  "skybound-cartographers": ["purple", "alex", "sam", "maya"],
-  "iron-vale": ["purple", "alex", "sam", "maya"],
-  "paper-lantern-festival": ["alex", "maya"],
-  "thistlewood-depths": ["sam", "alex"],
-  "cascade-protocol": ["purple"],
-  "windward-traders": ["alex"],
-  "glasshouse": ["purple", "alex", "sam", "maya"],
-  "backlot-heroes": ["sam", "maya"],
-  "ashen-frontier": ["purple"],
-  "meridian-racing-league": ["alex", "sam", "maya", "chris"],
-  "quiet-orchard": ["purple"],
-  "vantage-point": ["alex", "sam"],
-  "driftwood-and-static": ["purple"],
-  "nine-lanterns": ["alex", "sam", "maya"],
-  "fathom-line": ["purple", "alex", "sam", "maya"],
-  "bramblewick-fair": ["alex", "sam"],
+  "nightfall-signal": ["alex", "justin", "robert", "sarah"],
+  "ridge-runners": ["alex", "justin", "robert", "sarah"],
+  "hollow-choir": ["alex", "justin", "robert", "sarah"],
+  "copper-and-steam": ["alex", "justin", "robert", "sarah"],
+  "longmarch-chronicles": ["alex", "justin", "robert", "sarah"],
+  "static-harbor": ["alex", "justin", "robert", "sarah"],
+  "tin-can-regatta": ["alex", "justin", "robert", "sarah"],
+  "emberfall-keep": ["alex", "justin", "sarah"],
+  "skybound-cartographers": ["alex", "justin", "robert", "sarah"],
+  "iron-vale": ["alex", "justin", "robert", "sarah"],
+  "paper-lantern-festival": ["justin", "sarah"],
+  "thistlewood-depths": ["robert", "justin"],
+  "cascade-protocol": ["alex"],
+  "windward-traders": ["justin"],
+  "glasshouse": ["alex", "justin", "robert", "sarah"],
+  "backlot-heroes": ["robert", "sarah"],
+  "ashen-frontier": ["alex"],
+  "meridian-racing-league": ["justin", "robert", "sarah", "andrew"],
+  "quiet-orchard": ["alex"],
+  "vantage-point": ["justin", "robert"],
+  "driftwood-and-static": ["alex"],
+  "nine-lanterns": ["justin", "robert", "sarah"],
+  "fathom-line": ["alex", "justin", "robert", "sarah"],
+  "bramblewick-fair": ["justin", "robert"],
 };
 
 /** Narrative-critical facts, hand-set so the hero flow and secondary demo
  * beats (resume, backlog, presence) land exactly as scripted. */
 const OVERRIDES: Record<string, Partial<LibraryEntry>> = {
   // Nightfall Signal — the hero query's clean answer. Nobody has finished it.
-  "purple:nightfall-signal": { completed: false, playtimeMinutes: 210, installed: true, lastPlayedAt: "2026-08-24" },
-  "alex:nightfall-signal": { completed: false, playtimeMinutes: 95, installed: true, lastPlayedAt: "2026-08-23" },
-  "sam:nightfall-signal": { completed: false, playtimeMinutes: 60, installed: true, lastPlayedAt: "2026-08-19" },
-  "maya:nightfall-signal": { completed: false, playtimeMinutes: 40, installed: true, lastPlayedAt: "2026-08-19" },
+  "alex:nightfall-signal": { completed: false, playtimeMinutes: 210, installed: true, lastPlayedAt: "2026-08-24" },
+  "justin:nightfall-signal": { completed: false, playtimeMinutes: 95, installed: true, lastPlayedAt: "2026-08-23" },
+  "robert:nightfall-signal": { completed: false, playtimeMinutes: 60, installed: true, lastPlayedAt: "2026-08-19" },
+  "sarah:nightfall-signal": { completed: false, playtimeMinutes: 40, installed: true, lastPlayedAt: "2026-08-19" },
 
-  // Ridge Runners — the near-miss. Fails only because Sam has finished it.
-  "purple:ridge-runners": { completed: false, playtimeMinutes: 150, installed: true, lastPlayedAt: "2026-08-25" },
-  "alex:ridge-runners": { completed: false, playtimeMinutes: 340, installed: true, lastPlayedAt: "2026-08-29" },
-  "sam:ridge-runners": { completed: true, playtimeMinutes: 620, installed: true, lastPlayedAt: "2026-08-27" },
-  "maya:ridge-runners": { completed: false, playtimeMinutes: 80, installed: true, lastPlayedAt: "2026-08-18" },
+  // Ridge Runners — the near-miss. Fails only because Robert has finished it.
+  "alex:ridge-runners": { completed: false, playtimeMinutes: 150, installed: true, lastPlayedAt: "2026-08-25" },
+  "justin:ridge-runners": { completed: false, playtimeMinutes: 340, installed: true, lastPlayedAt: "2026-08-29" },
+  "robert:ridge-runners": { completed: true, playtimeMinutes: 620, installed: true, lastPlayedAt: "2026-08-27" },
+  "sarah:ridge-runners": { completed: false, playtimeMinutes: 80, installed: true, lastPlayedAt: "2026-08-18" },
 
   // Hollow Choir — fits everything but is horror. Nobody has finished it.
-  "purple:hollow-choir": { completed: false, playtimeMinutes: 70, installed: true, lastPlayedAt: "2026-08-14" },
   "alex:hollow-choir": { completed: false, playtimeMinutes: 70, installed: true, lastPlayedAt: "2026-08-14" },
-  "sam:hollow-choir": { completed: false, playtimeMinutes: 55, installed: true, lastPlayedAt: "2026-08-14" },
-  "maya:hollow-choir": { completed: false, playtimeMinutes: 55, installed: false, lastPlayedAt: "2026-08-14" },
+  "justin:hollow-choir": { completed: false, playtimeMinutes: 70, installed: true, lastPlayedAt: "2026-08-14" },
+  "robert:hollow-choir": { completed: false, playtimeMinutes: 55, installed: true, lastPlayedAt: "2026-08-14" },
+  "sarah:hollow-choir": { completed: false, playtimeMinutes: 55, installed: false, lastPlayedAt: "2026-08-14" },
 
   // Fathom Line — fits everything but is horror. Nobody has finished it.
-  "purple:fathom-line": { completed: false, playtimeMinutes: 90, installed: true, lastPlayedAt: "2026-08-08" },
   "alex:fathom-line": { completed: false, playtimeMinutes: 90, installed: true, lastPlayedAt: "2026-08-08" },
-  "sam:fathom-line": { completed: false, playtimeMinutes: 65, installed: false, lastPlayedAt: "2026-08-01" },
-  "maya:fathom-line": { completed: false, playtimeMinutes: 65, installed: true, lastPlayedAt: "2026-08-01" },
+  "justin:fathom-line": { completed: false, playtimeMinutes: 90, installed: true, lastPlayedAt: "2026-08-08" },
+  "robert:fathom-line": { completed: false, playtimeMinutes: 65, installed: false, lastPlayedAt: "2026-08-01" },
+  "sarah:fathom-line": { completed: false, playtimeMinutes: 65, installed: true, lastPlayedAt: "2026-08-01" },
 
-  // Tin Can Regatta — a second, quieter near-miss. Maya has finished it.
-  "purple:tin-can-regatta": { completed: false, playtimeMinutes: 120, installed: true, lastPlayedAt: "2026-08-21" },
-  "alex:tin-can-regatta": { completed: false, playtimeMinutes: 110, installed: true, lastPlayedAt: "2026-08-21" },
-  "sam:tin-can-regatta": { completed: false, playtimeMinutes: 95, installed: true, lastPlayedAt: "2026-08-16" },
-  "maya:tin-can-regatta": { completed: true, playtimeMinutes: 180, installed: true, lastPlayedAt: "2026-08-20" },
+  // Tin Can Regatta — a second, quieter near-miss. Sarah has finished it.
+  "alex:tin-can-regatta": { completed: false, playtimeMinutes: 120, installed: true, lastPlayedAt: "2026-08-21" },
+  "justin:tin-can-regatta": { completed: false, playtimeMinutes: 110, installed: true, lastPlayedAt: "2026-08-21" },
+  "robert:tin-can-regatta": { completed: false, playtimeMinutes: 95, installed: true, lastPlayedAt: "2026-08-16" },
+  "sarah:tin-can-regatta": { completed: true, playtimeMinutes: 180, installed: true, lastPlayedAt: "2026-08-20" },
 
   // Backlog — bought and never launched, so "what have I never started?"
   // has a real answer. Neither game reaches the hero funnel's completion
-  // step (Cascade Protocol is Purple-only; Skybound Cartographers is cut
+  // step (Cascade Protocol is Alex-only; Skybound Cartographers is cut
   // earlier for not supporting four players), so this can't disturb it.
-  "purple:cascade-protocol": { completed: false, playtimeMinutes: 0, installed: true, lastPlayedAt: null },
-  "purple:skybound-cartographers": { completed: false, playtimeMinutes: 0, installed: false, lastPlayedAt: null },
+  "alex:cascade-protocol": { completed: false, playtimeMinutes: 0, installed: true, lastPlayedAt: null },
+  "alex:skybound-cartographers": { completed: false, playtimeMinutes: 0, installed: false, lastPlayedAt: null },
 
   // Secondary demo beats — resume, backlog, presence.
-  "purple:ashen-frontier": { completed: false, playtimeMinutes: 890, installed: true, lastPlayedAt: "2026-08-17" },
-  "purple:quiet-orchard": { completed: false, playtimeMinutes: 35, installed: true, lastPlayedAt: "2026-07-30" },
-  "purple:driftwood-and-static": { completed: true, playtimeMinutes: 205, installed: false, lastPlayedAt: "2026-06-11" },
-  "alex:glasshouse": { completed: true, playtimeMinutes: 90, installed: true, lastPlayedAt: "2026-08-10" },
-  "maya:glasshouse": { completed: true, playtimeMinutes: 75, installed: true, lastPlayedAt: "2026-08-12" },
+  "alex:ashen-frontier": { completed: false, playtimeMinutes: 890, installed: true, lastPlayedAt: "2026-08-17" },
+  "alex:quiet-orchard": { completed: false, playtimeMinutes: 35, installed: true, lastPlayedAt: "2026-07-30" },
+  "alex:driftwood-and-static": { completed: true, playtimeMinutes: 205, installed: false, lastPlayedAt: "2026-06-11" },
+  "justin:glasshouse": { completed: true, playtimeMinutes: 90, installed: true, lastPlayedAt: "2026-08-10" },
+  "sarah:glasshouse": { completed: true, playtimeMinutes: 75, installed: true, lastPlayedAt: "2026-08-12" },
 };
 
 /** Deterministic pseudo-random in [0, 1) — no Math.random, so demo data is

@@ -5,7 +5,7 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
+        "content": "Justin, Robert and Sarah are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
       }
     ],
     "expectedCall": [
@@ -19,7 +19,7 @@
           },
           {
             "functionName": "get_friend_libraries",
-            "arguments": { "friendIds": { "$contains": "alex" } }
+            "arguments": { "friendIds": { "$contains": "justin" } }
           }
         ]
       }
@@ -31,16 +31,16 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
+        "content": "Justin, Robert and Sarah are online. We've got about 75 minutes. Find a co-op game all four of us can play — preferably something none of us has finished, and nothing scary."
       },
-      { "role": "assistant", "type": "message", "content": "I'd recommend Nightfall Signal — all four of you own it, it's 4-player co-op, sessions run 45-70 minutes, and nobody has finished it. Ridge Runners is a close second, but Sam has already completed it." },
+      { "role": "assistant", "type": "message", "content": "I'd recommend Nightfall Signal — all four of you own it, it's 4-player co-op, sessions run 45-70 minutes, and nobody has finished it. Ridge Runners is a close second, but Robert has already completed it." },
       { "role": "user", "type": "message", "content": "Let's play Nightfall Signal." }
     ],
     "expectedCall": [
       { "functionName": "create_party", "arguments": { "gameId": "nightfall-signal" } },
       {
         "functionName": "invite_friends",
-        "arguments": { "friendIds": { "$contains": "alex" } }
+        "arguments": { "friendIds": { "$contains": "justin" } }
       }
     ]
   },
@@ -69,9 +69,9 @@
     ]
   },
   {
-    "name": "Presence-aware: what is Alex playing",
+    "name": "Presence-aware: what is Justin playing",
     "messages": [
-      { "role": "user", "type": "message", "content": "Alex is online right now — what are they playing? Would it work for all four of us?" }
+      { "role": "user", "type": "message", "content": "Justin is online right now — what are they playing? Would it work for all four of us?" }
     ],
     "expectedCall": [
       { "functionName": "get_online_friends", "arguments": {} },
@@ -107,7 +107,7 @@
   {
     "name": "No clean match: designed near-miss",
     "messages": [
-      { "role": "user", "type": "message", "content": "Find something co-op, 4 players, under 75 minutes, that Sam hasn't already finished." }
+      { "role": "user", "type": "message", "content": "Find something co-op, 4 players, under 75 minutes, that Robert hasn't already finished." }
     ],
     "expectedCall": [
       {
@@ -118,7 +118,7 @@
           },
           {
             "functionName": "get_friend_libraries",
-            "arguments": { "friendIds": { "$contains": "sam" } }
+            "arguments": { "friendIds": { "$contains": "robert" } }
           }
         ]
       }

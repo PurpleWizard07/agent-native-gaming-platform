@@ -122,17 +122,17 @@ console.log("\n--- get_online_friends ---");
 const onlineFriends = await callTool("get_online_friends");
 console.log(onlineFriends);
 assert(
-  onlineFriends.some((f) => f.id === "alex" && f.playingGameId === "ridge-runners"),
-  "Alex shows as playing Ridge Runners",
+  onlineFriends.some((f) => f.id === "justin" && f.playingGameId === "ridge-runners"),
+  "Justin shows as playing Ridge Runners",
 );
 assert(
-  onlineFriends.some((f) => f.id === "alex" && f.playingGameTitle === "Ridge Runners"),
+  onlineFriends.some((f) => f.id === "justin" && f.playingGameTitle === "Ridge Runners"),
   "playingGameTitle saves a get_game_details round trip",
 );
 
 console.log("\n--- structured errors: a party action with no party is legible, not opaque ---");
 expectingApiError = true;
-const noParty = await callToolRaw("invite_friends", { friendIds: ["alex"] });
+const noParty = await callToolRaw("invite_friends", { friendIds: ["justin"] });
 console.log(noParty);
 assert(noParty.isError === true, "invite_friends with no active party reports isError");
 assert(JSON.parse(noParty.text).error === "no active party", "the error text names the cause the agent can recover from");
@@ -180,12 +180,12 @@ assert(unplayed.length > 0, "some owned games have never been started");
 assert(unplayed.every((e) => e.playtimeMinutes === 0), "onlyUnplayed returns only zero-playtime games");
 assert(unplayed.length < unfinished.length, "onlyUnplayed is a strict subset of onlyUnfinished");
 
-console.log("\n--- get_friend_libraries: alex, sam, maya ---");
-const friendLibs = await callTool("get_friend_libraries", { friendIds: ["alex", "sam", "maya"] });
-const nightfallOwners = ["alex", "sam", "maya"].filter((id) => friendLibs[id].some((e) => e.gameId === "nightfall-signal"));
+console.log("\n--- get_friend_libraries: justin, robert, sarah ---");
+const friendLibs = await callTool("get_friend_libraries", { friendIds: ["justin", "robert", "sarah"] });
+const nightfallOwners = ["justin", "robert", "sarah"].filter((id) => friendLibs[id].some((e) => e.gameId === "nightfall-signal"));
 assert(nightfallOwners.length === 3, "all three friends own Nightfall Signal per get_friend_libraries");
-const ridgeRunnersCompleters = ["alex", "sam", "maya"].filter((id) => friendLibs[id].some((e) => e.gameId === "ridge-runners" && e.completed));
-assert(ridgeRunnersCompleters.length === 1 && ridgeRunnersCompleters[0] === "sam", "only Sam has completed Ridge Runners, per get_friend_libraries");
+const ridgeRunnersCompleters = ["justin", "robert", "sarah"].filter((id) => friendLibs[id].some((e) => e.gameId === "ridge-runners" && e.completed));
+assert(ridgeRunnersCompleters.length === 1 && ridgeRunnersCompleters[0] === "robert", "only Robert has completed Ridge Runners, per get_friend_libraries");
 
 console.log("\n--- get_game_details: friendsWhoOwn ---");
 const details = await callTool("get_game_details", { gameIds: ["nightfall-signal"] });
@@ -235,7 +235,7 @@ assert(gameView.visibleGameIds === undefined, "a game page does NOT report the s
 
 console.log("\n--- full party flow via tools: create -> invite -> status ---");
 await callTool("create_party", { gameId: "nightfall-signal" });
-const afterInvite = await callTool("invite_friends", { friendIds: ["alex", "sam", "maya"] });
+const afterInvite = await callTool("invite_friends", { friendIds: ["justin", "robert", "sarah"] });
 console.log(afterInvite);
 const status1 = await callTool("get_party_status");
 assert(status1.active === true && status1.status === "forming", "party is 'forming' right after inviting");
@@ -247,10 +247,10 @@ console.log("\n--- launch_session names who it is waiting on ---");
 const waiting = await callTool("launch_session");
 console.log(waiting);
 assert(waiting.status === "not_ready", "launch_session refuses while members are still invited");
-assert(waiting.waitingOn.sort().join(",") === "Alex,Maya,Sam", "launch_session names exactly who has not responded");
+assert(waiting.waitingOn.sort().join(",") === "Justin,Robert,Sarah", "launch_session names exactly who has not responded");
 
-// Simulate Alex/Sam/Maya accepting via the same API the UI uses.
-for (const id of ["alex", "sam", "maya"]) {
+// Simulate Justin/Robert/Sarah accepting via the same API the UI uses.
+for (const id of ["justin", "robert", "sarah"]) {
   await api({ action: "respond", userId: id, accept: true });
 }
 await page.waitForTimeout(1800); // let PartyContext's poll pick it up
@@ -264,22 +264,22 @@ assert(launchResult.status === "launching", "launch_session returns status: laun
 
 console.log("\n--- respond_to_invite appears only in a session that has an invite pending ---");
 await reset();
-await api({ action: "create", gameId: "nightfall-signal", hostId: "purple" });
-await api({ action: "invite", friendIds: ["alex"] });
+await api({ action: "create", gameId: "nightfall-signal", hostId: "alex" });
+await api({ action: "invite", friendIds: ["justin"] });
 
 await page.goto(url("/party"), { waitUntil: "networkidle" });
-await page.getByLabel("View as").selectOption({ label: "Alex" });
+await page.getByLabel("View as").selectOption({ label: "Justin" });
 await page.waitForSelector("text=You've been invited");
 const alexTools = await toolNames();
 console.log(alexTools.join(", "));
-assert(alexTools.includes("respond_to_invite"), "respond_to_invite IS registered while Alex has a pending invite");
+assert(alexTools.includes("respond_to_invite"), "respond_to_invite IS registered while Justin has a pending invite");
 
 const responded = await callTool("respond_to_invite", { accept: true });
 console.log(responded);
 assert(responded.accepted === true, "respond_to_invite accepts on the invited player's behalf");
 assert(
-  responded.members.find((m) => m.userId === "alex")?.state === "accepted",
-  "the shared party state records Alex as accepted",
+  responded.members.find((m) => m.userId === "justin")?.state === "accepted",
+  "the shared party state records Justin as accepted",
 );
 await page.waitForSelector("text=Accepted");
 await page.waitForTimeout(300);

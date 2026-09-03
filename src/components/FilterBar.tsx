@@ -47,7 +47,7 @@ export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterB
   };
 
   return (
-    <div className="space-y-3 border-b border-neutral-800 pb-4">
+    <div className="space-y-3 border-b border-ink-800 pb-4">
       <div className="flex flex-wrap items-center gap-2">
         {/* The human's equivalent of search_games' `query` — without it the
             agent could text-search a catalog the player could only click
@@ -58,12 +58,12 @@ export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterB
           placeholder="Search games"
           value={filters.query ?? ""}
           onChange={(e) => onChange((prev) => ({ ...prev, query: e.target.value || undefined }))}
-          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-violet-500 focus:outline-none sm:w-56"
+          className="w-full rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-accent-500 focus:outline-none sm:w-56"
         />
 
         <select
           aria-label="Player count"
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200"
+          className="field px-2 py-1 pr-7 text-xs"
           value={filters.minPlayers ?? ""}
           onChange={(e) => onChange((prev) => ({ ...prev, minPlayers: e.target.value ? Number(e.target.value) : undefined }))}
         >
@@ -76,7 +76,7 @@ export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterB
 
         <select
           aria-label="Session length"
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200"
+          className="field px-2 py-1 pr-7 text-xs"
           value={filters.maxSessionMinutes ?? ""}
           onChange={(e) => onChange((prev) => ({ ...prev, maxSessionMinutes: e.target.value ? Number(e.target.value) : undefined }))}
         >
@@ -140,7 +140,7 @@ export function FilterBar({ genres, filters, onChange, libraryToggles }: FilterB
               key={genre}
               onClick={() => toggleGenre(genre)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                active ? "bg-violet-600 text-white" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
+                active ? "bg-accent-400 text-ink-950" : "bg-ink-800 text-neutral-300 hover:bg-ink-700"
               }`}
             >
               {genre}

@@ -11,7 +11,7 @@ import type { MemberState } from "../types/party";
 
 const STATE_LABEL: Record<MemberState, string> = { invited: "Invited", accepted: "Accepted", declined: "Declined" };
 const STATE_CLASS: Record<MemberState, string> = {
-  invited: "bg-neutral-800 text-neutral-400",
+  invited: "bg-ink-800 text-neutral-400",
   accepted: "bg-emerald-900/50 text-emerald-400",
   declined: "bg-red-950/50 text-red-400",
 };
@@ -21,7 +21,7 @@ function InviteLink() {
   const link = inviteLink();
 
   return (
-    <section className="space-y-2 rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+    <section className="space-y-2 rounded-lg border border-ink-800 bg-ink-900 p-4 shadow-card">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">Second player</h2>
       <p className="text-xs text-neutral-500">
         Open this link in another window (or another browser) to join this same party as one of the friends.
@@ -32,7 +32,7 @@ function InviteLink() {
           aria-label="Invite link"
           value={link}
           onFocus={(e) => e.currentTarget.select()}
-          className="min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-300"
+          className="min-w-0 flex-1 rounded-md border border-ink-700 bg-ink-950 px-2 py-1.5 text-xs text-neutral-300"
         />
         <button
           onClick={async () => {
@@ -43,7 +43,7 @@ function InviteLink() {
               notify("Couldn't copy — select the link and copy it manually");
             }
           }}
-          className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800"
+          className="rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs text-neutral-300 hover:bg-ink-800"
         >
           Copy
         </button>
@@ -70,11 +70,11 @@ export function Party() {
   if (loading) {
     return (
       <div className="space-y-6" aria-busy="true">
-        <div className="h-4 w-16 animate-pulse rounded bg-neutral-800" />
-        <div className="h-8 w-64 animate-pulse rounded bg-neutral-800" />
+        <div className="h-4 w-16 animate-pulse rounded bg-ink-800" />
+        <div className="h-8 w-64 animate-pulse rounded bg-ink-800" />
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg bg-neutral-900" />
+            <div key={i} className="h-14 animate-pulse rounded-lg bg-ink-900" />
           ))}
         </div>
       </div>
@@ -83,11 +83,19 @@ export function Party() {
 
   if (!party) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 py-24 text-center text-neutral-400">
+      // A bordered panel with an actual next step, rather than 192px of
+      // centred text floating in an empty page.
+      <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-lg border border-ink-800 bg-ink-900 px-6 py-10 text-center shadow-card">
         <h1 className="text-lg font-semibold text-white">No active party</h1>
-        <p className="max-w-sm text-sm">
-          Pick a game from the <Link to="/store" className="text-violet-400 hover:text-violet-300">Store</Link> and hit Play to start one.
+        <p className="text-sm text-neutral-400">
+          Pick a game and hit Play to start one — then invite friends from the party page.
         </p>
+        <Link
+          to="/store"
+          className="mt-1 rounded-md bg-accent-400 px-4 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-accent-300"
+        >
+          Browse the Store
+        </Link>
       </div>
     );
   }
@@ -120,7 +128,7 @@ export function Party() {
       </section>
 
       {(launching || party.status === "launched") && (
-        <section className="rounded-lg border border-violet-800 bg-violet-950/40 px-4 py-3 text-sm font-medium text-violet-300">
+        <section className="rounded-lg border border-accent-700 bg-accent-950/40 px-4 py-3 text-sm font-medium text-accent-300">
           {launching ? "Launching…" : `${game?.title ?? "Session"} — SESSION READY`}
         </section>
       )}
@@ -131,8 +139,8 @@ export function Party() {
           {party.members.map((m) => {
             const user = USER_BY_ID[m.userId];
             return (
-              <div key={m.userId} className="flex items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3">
-                {user ? <Avatar user={user} /> : <span className="h-7 w-7 shrink-0 rounded-full bg-neutral-700" />}
+              <div key={m.userId} className="flex items-center gap-3 rounded-lg border border-ink-800 bg-ink-900 px-4 py-3 shadow-card">
+                {user ? <Avatar user={user} /> : <span className="h-7 w-7 shrink-0 rounded-full bg-ink-700" />}
                 <span className="font-medium text-neutral-100">{user?.name ?? m.userId}</span>
                 {m.userId === party.hostId && <span className="text-xs text-neutral-500">Host</span>}
                 <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-medium ${STATE_CLASS[m.state]}`}>{STATE_LABEL[m.state]}</span>
@@ -143,19 +151,19 @@ export function Party() {
       </section>
 
       {myMembership?.state === "invited" && (
-        <section className="flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900 px-4 py-3">
+        <section className="flex flex-wrap items-center gap-3 rounded-lg border border-ink-800 bg-ink-900 px-4 py-3 shadow-card">
           <span className="text-sm text-neutral-300">You&apos;ve been invited to play {game?.title}.</span>
           <button
             disabled={busy}
             onClick={() => withBusy(() => respond(viewer.id, true))}
-            className="ml-auto rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="ml-auto rounded-md bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-emerald-300 disabled:opacity-50"
           >
             Accept
           </button>
           <button
             disabled={busy}
             onClick={() => withBusy(() => respond(viewer.id, false))}
-            className="rounded-md bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-neutral-700 disabled:opacity-50"
+            className="rounded-md bg-ink-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-ink-700 disabled:opacity-50"
           >
             Decline
           </button>
@@ -171,7 +179,7 @@ export function Party() {
                 key={friend.id}
                 disabled={busy}
                 onClick={() => withBusy(() => inviteFriends([friend.id]))}
-                className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
+                className="rounded-md border border-ink-700 bg-ink-900 px-3 py-1.5 text-xs text-neutral-300 hover:bg-ink-800 disabled:opacity-50"
               >
                 {state === "declined" ? "Re-invite" : "Invite"} {friend.name}
               </button>
@@ -185,7 +193,7 @@ export function Party() {
           <button
             disabled={!readyToLaunch || busy || party.status === "launched"}
             onClick={handleLaunch}
-            className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500"
+            className="rounded-md bg-accent-400 px-4 py-2 text-sm font-semibold text-ink-950 hover:bg-accent-300 disabled:cursor-not-allowed disabled:bg-ink-800 disabled:text-neutral-500"
           >
             {party.status === "launched" ? "Launched" : "Launch"}
           </button>
@@ -197,7 +205,7 @@ export function Party() {
 
       {isHost && <InviteLink />}
 
-      <section className="border-t border-neutral-800 pt-4">
+      <section className="border-t border-ink-800 pt-4">
         <button onClick={() => withBusy(reset)} className="text-xs text-neutral-500 underline hover:text-neutral-300">
           Reset demo
         </button>

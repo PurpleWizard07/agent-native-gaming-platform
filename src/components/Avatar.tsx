@@ -16,8 +16,8 @@ export function Avatar({ user, showPresence = false }: { user: User; showPresenc
       {showPresence && (
         <span
           className={
-            "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-neutral-900 " +
-            (user.presence === "online" ? "bg-emerald-500" : "bg-neutral-600")
+            "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-ink-900 " +
+            (user.presence === "online" ? "bg-emerald-500" : "bg-ink-600")
           }
           aria-hidden="true"
         />

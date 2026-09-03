@@ -12,13 +12,13 @@ import { GAMES, GAME_BY_ID } from "../src/data/games";
 import { LIBRARY } from "../src/data/libraries";
 import { fitsSessionBudget } from "../src/lib/filterGames";
 
-const PLAYER = "purple";
-const FRIENDS = ["alex", "sam", "maya"];
+const PLAYER = "alex";
+const FRIENDS = ["justin", "robert", "sarah"];
 const PARTY = [PLAYER, ...FRIENDS];
 const AVAILABLE_MINUTES = 75;
 
 export const HERO_PROMPT =
-  "Alex, Sam and Maya are online. We've got about 75 minutes. Find a co-op game all four of us can play — " +
+  "Justin, Robert and Sarah are online. We've got about 75 minutes. Find a co-op game all four of us can play — " +
   "preferably something none of us has finished, and nothing scary.";
 
 function ownersOf(gameId: string): Set<string> {
@@ -82,7 +82,7 @@ assert(answers[0]?.id === "nightfall-signal", "the clean answer is Nightfall Sig
 
 const ridgeRunners = GAME_BY_ID["ridge-runners"];
 assert(someoneFinished.some((g) => g.id === "ridge-runners"), "Ridge Runners is a near-miss (fails only on completion)");
-assert(completersOf("ridge-runners").has("sam"), "Ridge Runners near-miss reason is: Sam completed it");
+assert(completersOf("ridge-runners").has("robert"), "Ridge Runners near-miss reason is: Robert completed it");
 assert(ridgeRunners.minPlayers <= 4 && ridgeRunners.maxPlayers >= 4, "Ridge Runners otherwise supports 4 players");
 assert(fitsSessionBudget(ridgeRunners.sessionMinutes, AVAILABLE_MINUTES), "Ridge Runners otherwise fits ~75 minutes");
 assert(ridgeRunners.coopModes.length > 0, "Ridge Runners otherwise has a co-op mode");

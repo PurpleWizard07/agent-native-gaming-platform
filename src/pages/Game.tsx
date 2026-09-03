@@ -7,7 +7,16 @@ import { useParty } from "../state/PartyContext";
 import { useView } from "../state/ViewContext";
 import { GameCover } from "../components/GameCover";
 import { Avatar } from "../components/Avatar";
-import { playerCountLabel, sessionLengthLabel } from "../lib/formatGame";
+import { coopLabel, playerCountLabel, sessionLengthLabel } from "../lib/formatGame";
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1.5">
+      <dt className="text-xs uppercase tracking-wide text-neutral-500">{label}</dt>
+      <dd className="text-sm text-neutral-200">{value}</dd>
+    </div>
+  );
+}
 
 export function GamePage() {
   const { gameId } = useParams();
@@ -31,7 +40,7 @@ export function GamePage() {
     return (
       <div className="space-y-4">
         <p className="text-neutral-400">Game not found.</p>
-        <Link to="/store" className="text-violet-400 hover:text-violet-300">
+        <Link to="/store" className="text-accent-400 hover:text-accent-300">
           Back to Store
         </Link>
       </div>
@@ -41,24 +50,15 @@ export function GamePage() {
   const owned = library.some((e) => e.gameId === game.id);
   const owningFriends = friends.filter((f) => ownsGame(f.id, game.id));
 
-  const playerLabel = playerCountLabel(game);
-  const sessionLabel = sessionLengthLabel(game);
-
-  const coopLabel =
-    game.coopModes.length === 0
-      ? "No co-op"
-      : `Co-op: ${game.coopModes.join(", ")}`;
-
   return (
     <div className="space-y-6">
-      <section className="space-y-3">
-        <GameCover game={game} className="aspect-[16/7] w-full" />
+      <section className="space-y-2">
         <h1 className="text-2xl font-bold text-neutral-100">{game.title}</h1>
         <div className="flex flex-wrap gap-1.5">
           {game.genres.map((genre) => (
             <span
               key={genre}
-              className="rounded bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-300"
+              className="rounded bg-ink-800 px-1.5 py-0.5 text-[11px] text-neutral-300"
             >
               {genre}
             </span>
@@ -66,64 +66,61 @@ export function GamePage() {
         </div>
       </section>
 
-      <section className="flex flex-wrap gap-2">
-        <span className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300">
-          {playerLabel}
-        </span>
-        <span className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300">
-          {sessionLabel}
-        </span>
-        <span className="rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300">
-          {coopLabel}
-        </span>
-      </section>
+      {/* Art left, action panel right, from lg up. As a single stacked column
+          the Play button ended up alone at the bottom of a 1150px-wide page
+          under five thin one-line sections. */}
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="space-y-4">
+          <GameCover game={game} className="aspect-[16/9] w-full" />
+          <p className="text-neutral-300">{game.description}</p>
+        </div>
 
-      <section>
-        <p className="text-neutral-300">{game.description}</p>
-      </section>
+        <aside className="space-y-4">
+          <div className="space-y-4 rounded-lg border border-ink-800 bg-ink-900 p-4 shadow-card">
+            <button
+              disabled={starting}
+              onClick={async () => {
+                setStarting(true);
+                await createParty(game.id, viewer.id);
+                navigate("/party");
+              }}
+              className="w-full rounded-md bg-accent-400 px-4 py-2.5 text-sm font-semibold text-ink-950 transition-colors hover:bg-accent-300 disabled:opacity-50"
+            >
+              Play
+            </button>
 
-      <section>
-        {owned ? (
-          <p className="font-medium text-emerald-400">You own this</p>
-        ) : (
-          <p className="text-neutral-500">Not in your library</p>
-        )}
-      </section>
+            {owned ? (
+              <p className="text-center text-sm font-medium text-emerald-400">You own this</p>
+            ) : (
+              <p className="text-center text-sm text-neutral-500">Not in your library</p>
+            )}
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
-          Friends who own this
-        </h2>
-        {owningFriends.length === 0 ? (
-          <p className="text-neutral-500">None of your friends own this yet.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {owningFriends.map((friend) => (
-              <span
-                key={friend.id}
-                className="flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-xs text-neutral-300"
-              >
-                <Avatar user={friend} showPresence />
-                {friend.name}
-              </span>
-            ))}
+            <dl className="divide-y divide-ink-800 border-t border-ink-800 pt-1">
+              <Stat label="Players" value={playerCountLabel(game)} />
+              <Stat label="Session" value={sessionLengthLabel(game)} />
+              <Stat label="Co-op" value={coopLabel(game)} />
+            </dl>
           </div>
-        )}
-      </section>
 
-      <section>
-        <button
-          disabled={starting}
-          onClick={async () => {
-            setStarting(true);
-            await createParty(game.id, viewer.id);
-            navigate("/party");
-          }}
-          className="inline-block rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
-        >
-          Play
-        </button>
-      </section>
+          <div className="rounded-lg border border-ink-800 bg-ink-900 p-4 shadow-card">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
+              Friends who own this
+            </h2>
+            {owningFriends.length === 0 ? (
+              <p className="text-sm text-neutral-500">None of your friends own this yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {owningFriends.map((friend) => (
+                  <li key={friend.id} className="flex items-center gap-2.5">
+                    <Avatar user={friend} showPresence />
+                    <span className="truncate text-sm text-neutral-200">{friend.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -96,7 +96,7 @@ export function PartyTools() {
   });
 
   // The one tool that lives in the *invited* player's session rather than the
-  // host's: it lets Alex's agent respond on Alex's behalf, which is what makes
+  // host's: it lets Justin's agent respond on Justin's behalf, which is what makes
   // this agent-to-agent coordination through a shared platform rather than one
   // agent driving one screen. Registering it only while an invite is pending
   // means its mere presence tells an agent there is something to answer — the
