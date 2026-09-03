@@ -274,6 +274,75 @@ credibility of the whole thing.
 
 ---
 
+## Phase 7 — Post-review hardening (complete)
+
+A full review pass over the finished build, fixing what it turned up. Three
+demo-reliability problems, in rough order of how badly they would have hurt:
+
+1. **The hero query did not actually have a unique answer.** `check-funnel`
+   narrowed the field with a no-horror preference the prompt never stated, so
+   it reported "exactly one answer" while an agent naming **Hollow Choir** or
+   **Fathom Line** would have been equally correct. Fixed by stating the
+   preference in the prompt (*"and nothing scary"*) rather than by quietly
+   keeping the filter — every step of the funnel now maps to a clause a player
+   said out loud, and the script labels which.
+2. **One global party for the whole live site.** Two people opening the demo at
+   the same time clobbered each other's session. Parties are now namespaced per
+   room (`?room=` → `localStorage` → generated, written back into the URL so it
+   is a shareable invite link), verified by a third browser session in another
+   room seeing none of the first one's party.
+3. **Tools registered only if `document.modelContext` already existed at
+   mount.** A host injecting the API after first paint would have got a page
+   with zero tools and no error anywhere — and neither verification shim could
+   catch it, since both install the API before page load. Registration now
+   waits for the API, with a late-injection test that installs it *after*
+   navigation.
+
+Tools added or corrected:
+
+- `respond_to_invite` — the stretch 13th tool, gated on a pending invite.
+- `get_current_view` + `open_game` extended to game pages, `apply_filters`
+  deliberately not (nothing there to filter). The view payload is now shaped
+  per page, so a game page cannot report the stale list from the page before it.
+- `maxSessionMinutes` re-specified as a session *budget*: a game fits when its
+  shortest session is within the budget and its longest overruns it by at most
+  30%. The old rule compared only the shortest session, so a 60-120 min game
+  "fit" a 75-minute evening. The rule now lives in one exported constant that
+  the filters, the tools and `check-funnel` all import.
+- `readOnlyHint` annotations on all seven read tools, so a host can
+  auto-approve looking and prompt for acting.
+- Thrown errors become `{ error }` with `isError: true` instead of an opaque
+  host failure; `launch_session` names who it is waiting on.
+- `playingGameTitle` on `get_online_friends`, `onlyUnplayed` on
+  `get_my_library`, `query` on `apply_filters`.
+
+Product changes, mostly closing agent/human asymmetries — anything the agent
+could do that the player could not was treated as a missing piece of UI:
+
+- Store/Library search box (`search_games` had `query` all along), a real
+  "Never started" toggle, and "Unplayed only" renamed to "Unfinished only",
+  which is what it actually filtered.
+- Session-length presets relabelled "About 30 min" — "Under 30 min" was a
+  claim the filter does not make.
+- Toasts for agent-driven changes, so a player in a narrow in-app browser can
+  see what the agent did and supervise it.
+- Re-inviting a friend who declined (the tool could already do it; the buttons
+  could not), a Party loading skeleton instead of a blank frame, a shared
+  `Avatar` component replacing a colour dot next to a presence dot, a
+  time-based greeting, and the real page `<title>`.
+- Seed data made internally consistent: a null `lastPlayedAt` now implies zero
+  playtime and not completed. Entries previously claimed hundreds of minutes
+  played on games never started, and *"what have I never started?"* — a query
+  the README advertises — had no possible answer.
+
+Verification grew with it: `test:webmcp` covers per-page and per-state
+registration, annotations, structured errors, budget semantics and late
+injection; `test:party` covers room isolation and doubles as the check that an
+ordinary browser with no agent stays error-free; `test:mobile` was wired up as
+an npm script, having existed as an unreachable file.
+
+---
+
 ## Risks
 
 | Risk | Mitigation |

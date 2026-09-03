@@ -130,7 +130,7 @@ Party         id, gameId, hostId, members[{userId, state}], status, updatedAt
 ```
 
 Deliberate simplification: presence is static. Only the party is live. That keeps
-8 of the 12 tools purely local and instant, and confines all network risk to one
+8 of the 13 tools purely local and instant, and confines all network risk to one
 endpoint.
 
 ---
@@ -268,12 +268,19 @@ end-to-end, and judges exploring on their own will expect it to work. But the
 scripted demo deliberately leaves the last click to the human. That handoff is
 the memorable beat.
 
-### Optional 13th (stretch, only if everything else is done)
+### Optional 13th (stretch, only if everything else is done) — BUILT
 
 `respond_to_invite({ accept })` — registered in a friend's session, letting
 *Alex's* agent accept on Alex's behalf. Agent-to-agent coordination through a
 shared platform. Genuinely novel, entirely optional. Do not let it delay the
 core 12.
+
+**Shipped** in the post-review pass (see implementation-plan.md Phase 7). It
+went further than planned in one respect: it is registered only *while an
+invitation is actually pending*, so its mere presence tells an agent there is
+something to answer. That makes it the one tool gated on state rather than
+route, and a second demonstration of the property that only in-page tools
+have.
 
 ---
 
@@ -321,7 +328,7 @@ Because the tools are live in the page, judges can go past the script:
 - "Which of my friends plays this?"
 - "Alex is playing something — would that work for all four of us?"
 
-Every one of these is answerable with the 12 tools. That turns the submission
+Every one of these is answerable with the shipped tools. That turns the submission
 from one scripted video into an application a judge can actually operate.
 
 ---
