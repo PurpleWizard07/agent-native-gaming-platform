@@ -24,3 +24,9 @@ scripts/.verify-screens
 *.njsproj
 *.sln
 *.sw?
+
+# Working docs — kept locally, not published
+SUBMISSION.md
+details.md
+implementation-plan.md
+webmcp-gaming-platform-concept.md

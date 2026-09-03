@@ -13,9 +13,7 @@ a second mode of interaction on top of it, not a replacement for the first.
 > synthetic; no real game is launched. The project demonstrates how such a
 > platform can be made agent-operable through WebMCP.
 
-Built for the WebMCP Challenge hackathon. Full design rationale:
-[webmcp-gaming-platform-concept.md](./webmcp-gaming-platform-concept.md).
-Build plan and phase-by-phase log: [implementation-plan.md](./implementation-plan.md).
+Built for the WebMCP Challenge hackathon.
 
 ---
 
