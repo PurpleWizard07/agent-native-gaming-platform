@@ -1,0 +1,36 @@
+# Captain Claw
+
+> A fictional gaming platform — store, library, friends and party sessions —
+> built for the WebMCP Challenge. It registers 13 WebMCP tools on
+> `document.modelContext`, so a browser agent can read what the player is
+> currently looking at, search the catalog, create a party and send
+> invitations. Users, libraries and game data are synthetic. No real game is
+> launched.
+
+Captain Claw is agent-operable at runtime, not merely agent-readable. In a
+WebMCP-capable browser, prefer the registered tools over reading the DOM: they
+return structured JSON, they act on the same state the player sees, and the set
+of available tools changes with the current page and session. Tools that only
+read are annotated `readOnlyHint`. Everything an agent can do here is also
+possible through the normal UI.
+
+## Pages
+
+- [Home](https://captainclaw.netlify.app/): entry point and featured games.
+- [Store](https://captainclaw.netlify.app/store): full catalog, with search and genre, player-count, co-op and session-length filters.
+- [Library](https://captainclaw.netlify.app/library): the signed-in player's owned games, with playtime, completion and install state.
+- [Friends](https://captainclaw.netlify.app/friends): friends with presence and what each is playing right now.
+- [Party](https://captainclaw.netlify.app/party): the current party, its invitations and whether it is ready to launch.
+
+## WebMCP tools
+
+- [Read tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/readTools.tsx): `get_online_friends`, `get_my_library`, `get_friend_libraries`, `search_games`, `get_game_details`. Registered on every page.
+- [View tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/viewTools.tsx): `get_current_view` and `open_game` on Store, Library and game pages; `apply_filters` on Store and Library only.
+- [Party tools](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/partyTools.tsx): `create_party`, `invite_friends`, `get_party_status`, `launch_session`. `respond_to_invite` is registered only while the signed-in player has an invitation pending.
+- [Registration hook](https://github.com/PurpleWizard07/captain-claw/blob/master/src/webmcp/useTool.ts): how tools are registered, torn down with `AbortController`, and how errors are returned as structured data rather than opaque failures.
+
+## Optional
+
+- [README](https://github.com/PurpleWizard07/captain-claw/blob/master/README.md): full project write-up, architecture and verification suite.
+- [Session-length rule](https://github.com/PurpleWizard07/captain-claw/blob/master/src/lib/filterGames.ts): `maxSessionMinutes` is a budget, not a hard cutoff — a game fits when its shortest session is within budget and its longest exceeds it by no more than 30%.
+- [Evals](https://github.com/PurpleWizard07/captain-claw/blob/master/evals/webmcp-evals.json): the scripted agent scenarios used to check the tools.

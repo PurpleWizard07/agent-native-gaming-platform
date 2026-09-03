@@ -165,8 +165,15 @@ That's why the UI says "About 60 min" instead of "Under 60 min."
 
 ## Try it
 
-Open the [live site](https://captainclaw.netlify.app) in ChatGPT's in-app
-browser, or use Chrome with `chrome://flags/#enable-webmcp-testing` enabled.
+Open the [live site](https://captainclaw.netlify.app) in Chrome 149-156. The
+site is registered for the
+[WebMCP origin trial](https://developer.chrome.com/blog/ai-webmcp-origin-trial),
+so `document.modelContext` is there on load and the tools register with no
+setup at all.
+
+It also works in ChatGPT's in-app browser. Outside that Chrome range, or after
+the trial token expires on 2026-11-17, enable
+`chrome://flags/#enable-webmcp-testing` instead.
 
 Try:
 
